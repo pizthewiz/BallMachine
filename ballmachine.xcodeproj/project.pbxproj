@@ -10,6 +10,7 @@
 		D8BA48D8145B3DC300110BAC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48D7145B3DC300110BAC /* Foundation.framework */; };
 		D8BA48DB145B3DC300110BAC /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D8BA48DA145B3DC300110BAC /* main.m */; };
 		D8BA48DF145B3DC300110BAC /* ballmachine.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D8BA48DE145B3DC300110BAC /* ballmachine.1 */; };
+		D8BA48E9145B441200110BAC /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48E8145B441200110BAC /* Quartz.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -34,6 +35,7 @@
 		D8BA48E5145B3E2E00110BAC /* CHANGELOG */ = {isa = PBXFileReference; lastKnownFileType = text; path = CHANGELOG; sourceTree = SOURCE_ROOT; };
 		D8BA48E6145B3E2E00110BAC /* README.markdown */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.markdown; sourceTree = SOURCE_ROOT; };
 		D8BA48E7145B3E2E00110BAC /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = SOURCE_ROOT; };
+		D8BA48E8145B441200110BAC /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -42,6 +44,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D8BA48D8145B3DC300110BAC /* Foundation.framework in Frameworks */,
+				D8BA48E9145B441200110BAC /* Quartz.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				D8BA48D7145B3DC300110BAC /* Foundation.framework */,
+				D8BA48E8145B441200110BAC /* Quartz.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -164,10 +168,11 @@
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
+					DEBUG,
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
@@ -175,7 +180,9 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
+				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
+				WARNING_CFLAGS = "-Wall";
 			};
 			name = Debug;
 		};
@@ -189,13 +196,16 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
+				WARNING_CFLAGS = "-Wall";
 			};
 			name = Release;
 		};
