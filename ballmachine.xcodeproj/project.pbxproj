@@ -1,0 +1,243 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D8BA48D8145B3DC300110BAC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48D7145B3DC300110BAC /* Foundation.framework */; };
+		D8BA48DB145B3DC300110BAC /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D8BA48DA145B3DC300110BAC /* main.m */; };
+		D8BA48DF145B3DC300110BAC /* ballmachine.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D8BA48DE145B3DC300110BAC /* ballmachine.1 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D8BA48D1145B3DC300110BAC /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				D8BA48DF145B3DC300110BAC /* ballmachine.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D8BA48D3145B3DC300110BAC /* ballmachine */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ballmachine; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8BA48D7145B3DC300110BAC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		D8BA48DA145B3DC300110BAC /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		D8BA48DD145B3DC300110BAC /* ballmachine-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ballmachine-Prefix.pch"; sourceTree = "<group>"; };
+		D8BA48DE145B3DC300110BAC /* ballmachine.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = ballmachine.1; sourceTree = "<group>"; };
+		D8BA48E5145B3E2E00110BAC /* CHANGELOG */ = {isa = PBXFileReference; lastKnownFileType = text; path = CHANGELOG; sourceTree = SOURCE_ROOT; };
+		D8BA48E6145B3E2E00110BAC /* README.markdown */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.markdown; sourceTree = SOURCE_ROOT; };
+		D8BA48E7145B3E2E00110BAC /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D8BA48D0145B3DC300110BAC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8BA48D8145B3DC300110BAC /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D8BA48C8145B3DC300110BAC = {
+			isa = PBXGroup;
+			children = (
+				D8BA48D9145B3DC300110BAC /* ballmachine */,
+				D8BA48D6145B3DC300110BAC /* Frameworks */,
+				D8BA48D4145B3DC300110BAC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D8BA48D4145B3DC300110BAC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D8BA48D3145B3DC300110BAC /* ballmachine */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D8BA48D6145B3DC300110BAC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D8BA48D7145B3DC300110BAC /* Foundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D8BA48D9145B3DC300110BAC /* ballmachine */ = {
+			isa = PBXGroup;
+			children = (
+				D8BA48DA145B3DC300110BAC /* main.m */,
+				D8BA48DE145B3DC300110BAC /* ballmachine.1 */,
+				D8BA48DC145B3DC300110BAC /* Supporting Files */,
+				D8BA48E6145B3E2E00110BAC /* README.markdown */,
+				D8BA48E5145B3E2E00110BAC /* CHANGELOG */,
+				D8BA48E7145B3E2E00110BAC /* TODO */,
+			);
+			path = ballmachine;
+			sourceTree = "<group>";
+		};
+		D8BA48DC145B3DC300110BAC /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				D8BA48DD145B3DC300110BAC /* ballmachine-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D8BA48D2145B3DC300110BAC /* ballmachine */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D8BA48E2145B3DC300110BAC /* Build configuration list for PBXNativeTarget "ballmachine" */;
+			buildPhases = (
+				D8BA48CF145B3DC300110BAC /* Sources */,
+				D8BA48D0145B3DC300110BAC /* Frameworks */,
+				D8BA48D1145B3DC300110BAC /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ballmachine;
+			productName = ballmachine;
+			productReference = D8BA48D3145B3DC300110BAC /* ballmachine */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D8BA48CA145B3DC300110BAC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0420;
+				ORGANIZATIONNAME = "Chorded Constructions";
+			};
+			buildConfigurationList = D8BA48CD145B3DC300110BAC /* Build configuration list for PBXProject "ballmachine" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = D8BA48C8145B3DC300110BAC;
+			productRefGroup = D8BA48D4145B3DC300110BAC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D8BA48D2145B3DC300110BAC /* ballmachine */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D8BA48CF145B3DC300110BAC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8BA48DB145B3DC300110BAC /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D8BA48E0145B3DC300110BAC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D8BA48E1145B3DC300110BAC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D8BA48E3145B3DC300110BAC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "ballmachine/ballmachine-Prefix.pch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D8BA48E4145B3DC300110BAC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "ballmachine/ballmachine-Prefix.pch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D8BA48CD145B3DC300110BAC /* Build configuration list for PBXProject "ballmachine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D8BA48E0145B3DC300110BAC /* Debug */,
+				D8BA48E1145B3DC300110BAC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D8BA48E2145B3DC300110BAC /* Build configuration list for PBXNativeTarget "ballmachine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D8BA48E3145B3DC300110BAC /* Debug */,
+				D8BA48E4145B3DC300110BAC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D8BA48CA145B3DC300110BAC /* Project object */;
+}
