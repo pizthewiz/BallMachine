@@ -12,6 +12,7 @@
 		D8BA48DF145B3DC300110BAC /* ballmachine.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D8BA48DE145B3DC300110BAC /* ballmachine.1 */; };
 		D8BA48E9145B441200110BAC /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48E8145B441200110BAC /* Quartz.framework */; };
 		D8BA48F9145F283D00110BAC /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48F8145F283D00110BAC /* ApplicationServices.framework */; };
+		D8BA48FB145F3E0A00110BAC /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48FA145F3E0A00110BAC /* AppKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -38,6 +39,7 @@
 		D8BA48E7145B3E2E00110BAC /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = SOURCE_ROOT; };
 		D8BA48E8145B441200110BAC /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		D8BA48F8145F283D00110BAC /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
+		D8BA48FA145F3E0A00110BAC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +50,7 @@
 				D8BA48D8145B3DC300110BAC /* Foundation.framework in Frameworks */,
 				D8BA48E9145B441200110BAC /* Quartz.framework in Frameworks */,
 				D8BA48F9145F283D00110BAC /* ApplicationServices.framework in Frameworks */,
+				D8BA48FB145F3E0A00110BAC /* AppKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +62,7 @@
 			children = (
 				D8BA48D9145B3DC300110BAC /* ballmachine */,
 				D8BA48D6145B3DC300110BAC /* Frameworks */,
+				D8BA48FA145F3E0A00110BAC /* AppKit.framework */,
 				D8BA48D4145B3DC300110BAC /* Products */,
 			);
 			sourceTree = "<group>";

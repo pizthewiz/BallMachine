@@ -134,15 +134,13 @@
 //    CCDebugLogSelector();
 
     NSTimeInterval now = [RenderTimer now] / NSEC_PER_SEC;
-    if (!self.startTime) {
-        CCDebugLog(@"setting startTime");
+    if (!self.startTime)
         self.startTime = now;
-    }
     NSTimeInterval relativeTime = now - startTime;
     NSTimeInterval nextRenderTime = [renderer renderingTimeForTime:relativeTime arguments:nil];
-    CCDebugLog(@"now:%f relativeTime:%f nextRenderTime:%f", now, relativeTime, nextRenderTime);
+//    CCDebugLog(@"now:%f relativeTime:%f nextRenderTime:%f", now, relativeTime, nextRenderTime);
     if (relativeTime >= nextRenderTime) {
-        CCDebugLog(@"\trendering");
+//        CCDebugLog(@"\trendering");
         [renderer renderAtTime:relativeTime arguments:nil];
 
         // DEBUG WRITE UGLY IMAGES TO TMP
@@ -194,7 +192,9 @@ int main (int argc, const char * argv[]) {
         [renderSlave startRendering];
 
 //        [[NSRunLoop currentRunLoop] run];
-        CFRunLoopRun();
+        // WORKAROUND - Syphon requires an application, it is unhappy otherwise!
+        //  http://code.google.com/p/syphon-framework/issues/detail?id=18
+        [[NSApplication sharedApplication] run];
     }
     return 0;
 }
