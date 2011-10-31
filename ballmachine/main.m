@@ -22,20 +22,6 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
-// taken from MABGTimer https://github.com/mikeash/MABGTimer/blob/master/Source/MABGTimer.m
-static NSTimeInterval _Now(void) {
-    static mach_timebase_info_data_t info;
-    static dispatch_once_t pred;
-    dispatch_once(&pred, ^{
-        mach_timebase_info(&info);
-    });
-
-    NSTimeInterval t = mach_absolute_time();
-    t *= info.numer;
-    t /= info.denom;
-    return t;
-}
-
 // based on a combo of watchdog timer and MABGTimer
 //  http://www.fieryrobot.com/blog/2010/07/10/a-watchdog-timer-in-gcd/
 //  http://www.mikeash.com/pyblog/friday-qa-2010-07-02-background-timers.html
@@ -45,6 +31,7 @@ static NSTimeInterval _Now(void) {
 }
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block;
 - (void)cancel;
++ (NSTimeInterval)now;
 @end;
 @implementation RenderTimer
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
@@ -56,7 +43,9 @@ static NSTimeInterval _Now(void) {
         // NB - this fires after interval, not immediately
         dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval * NSEC_PER_SEC, 0);
         dispatch_source_set_event_handler(_timer, ^{
-            block();
+            @autoreleasepool {
+                block();
+            }
         });
         dispatch_resume(_timer);
     }
@@ -71,6 +60,19 @@ static NSTimeInterval _Now(void) {
         dispatch_release(_timer);
         _timer = NULL;
     });
+}
+// in nanoseconds
++ (NSTimeInterval)now {
+    static mach_timebase_info_data_t info;
+    static dispatch_once_t pred;
+    dispatch_once(&pred, ^{
+        mach_timebase_info(&info);
+    });
+
+    NSTimeInterval t = mach_absolute_time();
+    t *= info.numer;
+    t /= info.denom;
+    return t;
 }
 @end
 
@@ -103,7 +105,9 @@ static NSTimeInterval _Now(void) {
     }
 
     // TODO - make size a settable value
-    self.renderer = [[QCRenderer alloc] initOffScreenWithSize:NSMakeSize(1280, 720) colorSpace:NULL composition:composition];
+    CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+    self.renderer = [[QCRenderer alloc] initOffScreenWithSize:NSMakeSize(1280, 720) colorSpace:rgbColorSpace composition:composition];
+    CGColorSpaceRelease(rgbColorSpace);
     if (!self.renderer) {
         CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
         exit(0);
@@ -113,6 +117,7 @@ static NSTimeInterval _Now(void) {
 - (void)startRendering {
     CCDebugLogSelector();
 
+    // TODO - make framerate settable
     self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./60.) do:^{
         [self _render];
     }];
@@ -126,17 +131,25 @@ static NSTimeInterval _Now(void) {
 }
 
 - (void)_render {
-    CCDebugLogSelector();
+//    CCDebugLogSelector();
 
-    NSTimeInterval now = _Now();
-    if (!startTime)
-        startTime = now;
-    NSTimeInterval relativeTime = (now - startTime) / 1000.;
+    NSTimeInterval now = [RenderTimer now] / NSEC_PER_SEC;
+    if (!self.startTime) {
+        CCDebugLog(@"setting startTime");
+        self.startTime = now;
+    }
+    NSTimeInterval relativeTime = now - startTime;
     NSTimeInterval nextRenderTime = [renderer renderingTimeForTime:relativeTime arguments:nil];
-//    CCDebugLog(@"now:%f relativeTime:%f nextRenderTime:%f", now, relativeTime, nextRenderTime);
+    CCDebugLog(@"now:%f relativeTime:%f nextRenderTime:%f", now, relativeTime, nextRenderTime);
     if (relativeTime >= nextRenderTime) {
         CCDebugLog(@"\trendering");
         [renderer renderAtTime:relativeTime arguments:nil];
+
+        // DEBUG WRITE UGLY IMAGES TO TMP
+//        NSImage* image = [renderer snapshotImage];
+//        NSData* tiffData = [image TIFFRepresentation];
+//        NSURL* url = [NSURL fileURLWithPath:[NSString stringWithFormat:@"/tmp/bm-%f.tif", now]];
+//        [tiffData writeToURL:url atomically:NO];
     }
 }
 
