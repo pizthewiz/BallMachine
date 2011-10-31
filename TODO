@@ -1,8 +1,8 @@
 
 NOW
-[ ] add debug, warn and error loggers
-[ ] create offscreen renderer with composition
-[ ] setup timer to run composition at 60fps
+[X] add debug, warn and error loggers
+[X] create offscreen renderer with composition
+[X] setup timer to run composition at 60fps
 [ ] offer means to define additional folder to load plug-ins from
 
 LATER
