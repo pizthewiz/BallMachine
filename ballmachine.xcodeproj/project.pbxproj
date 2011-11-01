@@ -62,7 +62,6 @@
 			children = (
 				D8BA48D9145B3DC300110BAC /* ballmachine */,
 				D8BA48D6145B3DC300110BAC /* Frameworks */,
-				D8BA48FA145F3E0A00110BAC /* AppKit.framework */,
 				D8BA48D4145B3DC300110BAC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -81,6 +80,7 @@
 				D8BA48D7145B3DC300110BAC /* Foundation.framework */,
 				D8BA48E8145B441200110BAC /* Quartz.framework */,
 				D8BA48F8145F283D00110BAC /* ApplicationServices.framework */,
+				D8BA48FA145F3E0A00110BAC /* AppKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
