@@ -7,3 +7,5 @@ NOW
 
 LATER
 [ ] generate image sequence / movie file -- or just rely on syphon recorder?
+[ ] support some sort of input port key > value setting?
+[ ] offer command-line option to load source composition inside Syphon Server composition
