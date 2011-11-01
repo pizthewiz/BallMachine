@@ -3,9 +3,15 @@ NOW
 [X] add debug, warn and error loggers
 [X] create offscreen renderer with composition
 [X] setup timer to run composition at 60fps
+[X] add max framerate command-line switch
+[X] add render size command-line switch
+[ ] support some sort of input port key > value setting?
 [ ] offer means to define additional folder to load plug-ins from
+[ ] offer command-line option to load source composition inside Syphon Server composition
 
 LATER
-[ ] generate image sequence / movie file -- or just rely on syphon recorder?
-[ ] support some sort of input port key > value setting?
-[ ] offer command-line option to load source composition inside Syphon Server composition
+[\] generate image sequence / movie file
+    suggest use of Syhpn and Syphon Recorder instead
+[ ] flip back to usng a raw runloop once Syphon no longer requires an NSApplication
+    http://code.google.com/p/syphon-framework/issues/detail?id=18
+[ ] consider setting up OpenGL context manually to define settings

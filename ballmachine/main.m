@@ -76,11 +76,17 @@
 }
 @end
 
+#define MAX_FRAMERATE_DEFAULT 30.
+#define CANVAS_WIDTH_DEFAULT 1280.
+#define CANVAS_HEIGHT_DEFAULT 720.
 
 @interface RenderSlave : NSObject <NSApplicationDelegate>
+@property (nonatomic) CGFloat maximumFramerate;
+@property (nonatomic) NSSize canvasSize;
 @property (nonatomic, strong) QCRenderer* renderer;
 @property (nonatomic, strong) RenderTimer* renderTimer;
 @property (nonatomic) NSTimeInterval startTime;
+- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size;
 - (void)loadCompositionAtURL:(NSURL*)location;
 - (void)startRendering;
 - (void)stopRendering;
@@ -89,7 +95,17 @@
 
 @implementation RenderSlave
 
-@synthesize renderer, renderTimer, startTime;
+@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime;
+
+- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size {
+    self = [super init];
+    if (self) {
+        self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_DEFAULT;
+        self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_DEFAULT, CANVAS_HEIGHT_DEFAULT);
+        [self loadCompositionAtURL:location];
+    }
+    return self;
+}
 
 - (void)dealloc {
     [self stopRendering];
@@ -104,9 +120,10 @@
         exit(0);
     }
 
-    // TODO - make size a settable value
+    CCDebugLog(@"inputKeys: %@", composition.inputKeys);
+
     CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-    self.renderer = [[QCRenderer alloc] initOffScreenWithSize:NSMakeSize(1280, 720) colorSpace:rgbColorSpace composition:composition];
+    self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:rgbColorSpace composition:composition];
     CGColorSpaceRelease(rgbColorSpace);
     if (!self.renderer) {
         CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
@@ -117,8 +134,7 @@
 - (void)startRendering {
     CCDebugLogSelector();
 
-    // TODO - make framerate settable
-    self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./60.) do:^{
+    self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./self.maximumFramerate) do:^{
         [self _render];
     }];
 }
@@ -155,10 +171,19 @@
 
 #pragma mark -
 
-int main (int argc, const char * argv[]) {
+void usage(const char * argv[]);
+void usage(const char * argv[]) {
+    printf("usage: %s <composition> [options]\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String]);
+    printf("\nOPTIONS:\n");
+    printf("\t--canvas-size\tset offscreen canvas size, E.g. '1920x1080'\n");
+    printf("\t--max-framerate\tset maximum rendering framerate\n");
+}
+
+int main(int argc, const char * argv[]) {
     @autoreleasepool {
-        if (argc != 2) {
-            CCErrorLog(@"usage: %@ <composition>", [[NSString stringWithUTF8String:argv[0]] lastPathComponent]);
+        // source composition is required
+        if (argc < 2) {
+            usage(argv);
             return -1;
         }
 
@@ -187,8 +212,15 @@ int main (int argc, const char * argv[]) {
             return -1;
         }
 
-        RenderSlave* renderSlave = [[RenderSlave alloc] init];
-        [renderSlave loadCompositionAtURL:url];
+        // output size
+        NSUserDefaults* args = [NSUserDefaults standardUserDefaults];
+        NSString* sizeString = [args stringForKey:@"-canvas-size"];
+        NSSize size = sizeString ? NSSizeFromString(sizeString) : NSZeroSize;
+
+        // framerate
+        CGFloat framerate = [args floatForKey:@"-max-framerate"];
+
+        RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:url maximumFramerate:framerate canvasSize:size];
         [renderSlave startRendering];
 
 //        [[NSRunLoop currentRunLoop] run];
