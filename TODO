@@ -8,6 +8,7 @@ NOW
 [X] support some sort of input port key > value setting
     --inputs switch with JSON string
 [X] offer means to define additional folder to load plug-ins from
+[ ] add help and version switches
 
 LATER
 [\] generate image sequence / movie file
