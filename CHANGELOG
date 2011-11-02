@@ -1,6 +1,6 @@
 
 v0.2.0 (1 Nov 2011)
-* expose canvas size, max framerate and input key:value pairs from command-line
+* expose canvas size, max framerate, input key:value pairs and extra plug-ins folder from command-line
 
 v0.1.0 (31 Oct 2011)
 * initial release

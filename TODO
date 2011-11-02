@@ -7,7 +7,7 @@ NOW
 [X] add render size command-line switch
 [X] support some sort of input port key > value setting
     --inputs switch with JSON string
-[ ] offer means to define additional folder to load plug-ins from
+[X] offer means to define additional folder to load plug-ins from
 
 LATER
 [\] generate image sequence / movie file

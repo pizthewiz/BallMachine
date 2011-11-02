@@ -204,7 +204,8 @@ void usage(const char * argv[]) {
     printf("\t--canvas-size\tset offscreen canvas size, E.g. '1920x1080'\n");
     printf("\t--max-framerate\tset maximum rendering framerate\n\n");
 //    printf("\t--print-inputs\tprint all composition input keys\n");
-    printf("\t--inputs\tdefine key value pairs in JSON - ESCAPE LIKE MAD!\n");
+    printf("\t--inputs\tdefine key value pairs in JSON - ESCAPE LIKE MAD!\n\n");
+    printf("\t--plugin-path\tprovide additional directory of plug-ins to load\n");
 }
 
 int main(int argc, const char * argv[]) {
@@ -252,6 +253,38 @@ int main(int argc, const char * argv[]) {
                 return -1;
             }
             CCDebugLog(@"inputs:%@", inputs);
+        }
+
+        // extra plug-in folder
+        NSString* plugInFolderPath = [args stringForKey:@"-plugin-path"];
+        if (plugInFolderPath) {
+            NSURL* plugInFolderLocation = [[NSURL alloc] initFileURLWithPossiblyRelativePath:plugInFolderPath isDirectory:NO];
+            // double check
+            if (![plugInFolderLocation isFileURL]) {
+                CCErrorLog(@"ERROR - filed to create URL for path '%@'", plugInFolderPath);
+                return -1;
+            }
+            if (![plugInFolderLocation checkResourceIsReachableAndReturnError:&error]) {
+                CCErrorLog(@"ERROR - bad extra plug-in directory URL: %@", [error localizedDescription]);
+                return -1;
+            }
+
+            NSArray* contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[plugInFolderLocation path] error:&error];
+            if (error) {
+                CCErrorLog(@"ERROR - failed to get contents for plug-in directory - %@", [error localizedDescription]);
+                return -1;
+            }
+            [contents enumerateObjectsUsingBlock:^(NSString* fileName, NSUInteger idx, BOOL *stop) {
+                if (![fileName hasSuffix:@"plugin"])
+                    return;
+
+                NSURL* bundleLocation = [plugInFolderLocation URLByAppendingPathComponent:fileName];
+                BOOL status = [QCPlugIn loadPlugInAtPath:[bundleLocation path]];
+                if (!status) {
+                    CCErrorLog(@"ERROR - failed to load bundle for plug-in %@", bundleLocation);
+                    return;
+                }
+            }];
         }
 
         RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
