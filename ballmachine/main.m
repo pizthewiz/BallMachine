@@ -86,8 +86,8 @@
 @property (nonatomic, strong) QCRenderer* renderer;
 @property (nonatomic, strong) RenderTimer* renderTimer;
 @property (nonatomic) NSTimeInterval startTime;
-- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size;
-- (void)loadCompositionAtURL:(NSURL*)location;
+- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
+- (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs;
 - (void)startRendering;
 - (void)stopRendering;
 - (void)_render;
@@ -97,12 +97,12 @@
 
 @synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime;
 
-- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size {
+- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
     self = [super init];
     if (self) {
         self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_DEFAULT;
         self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_DEFAULT, CANVAS_HEIGHT_DEFAULT);
-        [self loadCompositionAtURL:location];
+        [self loadCompositionAtURL:location withInputPairs:inputs];
     }
     return self;
 }
@@ -111,7 +111,7 @@
     [self stopRendering];
 }
 
-- (void)loadCompositionAtURL:(NSURL*)location {
+- (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs {
     CCDebugLogSelector();
 
     QCComposition* composition = [QCComposition compositionWithFile:location.path];
@@ -120,8 +120,6 @@
         exit(0);
     }
 
-    CCDebugLog(@"inputKeys: %@", composition.inputKeys);
-
     CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
     self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:rgbColorSpace composition:composition];
     CGColorSpaceRelease(rgbColorSpace);
@@ -129,6 +127,16 @@
         CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
         exit(0);
     }
+
+    // set inputs
+    [inputs enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if (![[self.renderer inputKeys] containsObject:key]) {
+            CCDebugLog(@"provided input key '%@' not found in composition and has been ignored...", key);
+            return;
+        }
+
+        [self.renderer setValue:obj forInputKey:key];
+    }];
 }
 
 - (void)startRendering {
@@ -176,7 +184,9 @@ void usage(const char * argv[]) {
     printf("usage: %s <composition> [options]\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String]);
     printf("\nOPTIONS:\n");
     printf("\t--canvas-size\tset offscreen canvas size, E.g. '1920x1080'\n");
-    printf("\t--max-framerate\tset maximum rendering framerate\n");
+    printf("\t--max-framerate\tset maximum rendering framerate\n\n");
+//    printf("\t--print-inputs\tprint all composition input keys\n");
+    printf("\t--inputs\tdefine key value pairs in JSON - ESCAPE LIKE MAD!\n");
 }
 
 int main(int argc, const char * argv[]) {
@@ -220,7 +230,25 @@ int main(int argc, const char * argv[]) {
         // framerate
         CGFloat framerate = [args floatForKey:@"-max-framerate"];
 
-        RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:url maximumFramerate:framerate canvasSize:size];
+        // inputs
+        NSDictionary* inputs;
+        NSString* inputValuesString = [args stringForKey:@"-inputs"];
+        if (inputValuesString) {
+            // strip leading and ending single quotes, i may just be command-line escape daft
+            if ([inputValuesString hasPrefix:@"'"] && [inputValuesString hasSuffix:@"'"])
+                inputValuesString = [inputValuesString substringWithRange:NSMakeRange(1, inputValuesString.length-2)];
+
+            NSError* error;
+            inputs = [NSJSONSerialization JSONObjectWithData:[inputValuesString dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers|NSJSONReadingMutableLeaves error:&error];
+            if (error) {
+                CCErrorLog(@"ERROR - failed to deserialize JSON - %@", [error localizedDescription]);
+                usage(argv);
+                return -1;
+            }
+            CCDebugLog(@"inputs:%@", inputs);
+        }
+
+        RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:url maximumFramerate:framerate canvasSize:size inputPairs:inputs];
         [renderSlave startRendering];
 
 //        [[NSRunLoop currentRunLoop] run];
