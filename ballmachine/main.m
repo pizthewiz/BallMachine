@@ -22,6 +22,24 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
+@interface NSURL(CCAdditions)
+- (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
+@end
+@implementation NSURL(CCAdditions)
+- (id)initFileURLWithPossiblyRelativePath:(NSString*)filePath isDirectory:(BOOL)isDir {
+    if ([filePath hasPrefix:@"../"] || [filePath hasPrefix:@"./"]) {
+        NSString* currentDirectoryPath = [[NSFileManager defaultManager] currentDirectoryPath];
+        filePath = [currentDirectoryPath stringByAppendingPathComponent:[filePath stringByStandardizingPath]];
+    }
+    filePath = [filePath stringByStandardizingPath];
+
+    self = [self initFileURLWithPath:filePath isDirectory:isDir];
+    if (self) {
+    }
+    return self;
+}
+@end
+
 // based on a combo of watchdog timer and MABGTimer
 //  http://www.fieryrobot.com/blog/2010/07/10/a-watchdog-timer-in-gcd/
 //  http://www.mikeash.com/pyblog/friday-qa-2010-07-02-background-timers.html
@@ -197,27 +215,15 @@ int main(int argc, const char * argv[]) {
             return -1;
         }
 
-        NSString* filePath = [[NSString stringWithUTF8String:argv[1]] stringByExpandingTildeInPath];
-        NSURL* url = [NSURL URLWithString:filePath];
-        if (![url isFileURL]) {
-            NSString* path = [filePath stringByStandardizingPath];
-            if ([path isAbsolutePath]) {
-                url = [NSURL fileURLWithPath:path isDirectory:NO];
-            } else {
-                // relative path
-                NSString* currentDirectoryPath = [[NSFileManager defaultManager] currentDirectoryPath];
-                NSString* resolvedFilePath = [currentDirectoryPath stringByAppendingPathComponent:[filePath stringByStandardizingPath]];
-                url = [NSURL fileURLWithPath:resolvedFilePath isDirectory:NO];
-            }
-        }
+        NSString* compositionFilePath = [NSString stringWithUTF8String:argv[1]];
+        NSURL* compositionLocation = [[NSURL alloc] initFileURLWithPossiblyRelativePath:compositionFilePath isDirectory:NO];
         // double check
-        if (![url isFileURL]) {
-            CCErrorLog(@"ERROR - filed to create URL for path '%@'", filePath);
+        if (![compositionLocation isFileURL]) {
+            CCErrorLog(@"ERROR - filed to create URL for path '%@'", compositionFilePath);
             return -1;
         }
-
         NSError* error;
-        if (![url checkResourceIsReachableAndReturnError:&error]) {
+        if (![compositionLocation checkResourceIsReachableAndReturnError:&error]) {
             CCErrorLog(@"ERROR - bad source composition URL: %@", [error localizedDescription]);
             return -1;
         }
@@ -248,7 +254,7 @@ int main(int argc, const char * argv[]) {
             CCDebugLog(@"inputs:%@", inputs);
         }
 
-        RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:url maximumFramerate:framerate canvasSize:size inputPairs:inputs];
+        RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
         [renderSlave startRendering];
 
 //        [[NSRunLoop currentRunLoop] run];
