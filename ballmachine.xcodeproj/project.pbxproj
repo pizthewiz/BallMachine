@@ -132,7 +132,7 @@
 		D8BA48CA145B3DC300110BAC /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0420;
+				LastUpgradeCheck = 0430;
 				ORGANIZATIONNAME = "Chorded Constructions";
 			};
 			buildConfigurationList = D8BA48CD145B3DC300110BAC /* Build configuration list for PBXProject "ballmachine" */;
@@ -254,6 +254,7 @@
 				D8BA48E4145B3DC300110BAC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
