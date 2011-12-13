@@ -251,9 +251,10 @@ void usage(const char * argv[]) {
     printf("\nOPTIONS:\n");
     printf("\t--canvas-size\tset offscreen canvas size, E.g. '1920x1080'\n");
     printf("\t--max-framerate\tset maximum rendering framerate\n\n");
-    printf("\t--print-attributes\tprint composition input keys and quit\n");
+    printf("\t--print-attributes\tprint composition io port details and quit\n");
     printf("\t--inputs\tdefine key value pairs in JSON - ESCAPE LIKE MAD!\n\n");
-    printf("\t--plugin-path\tprovide additional directory of plug-ins to load\n");
+    printf("\t--plugin-path\tprovide additional directory of plug-ins to load\n\n");
+    printf("\t--gui\trun tool as a GUI application with a window server connection\n");
 }
 
 int main(int argc, const char * argv[]) {
@@ -284,16 +285,6 @@ int main(int argc, const char * argv[]) {
 
         // framerate
         CGFloat framerate = [args floatForKey:@"-max-framerate"];
-
-        // print inputs
-        BOOL shouldDumpAttributes = NO;
-        for (NSUInteger idx = 2; idx < argc; idx++) {
-            NSString* arg = [NSString stringWithUTF8String:argv[idx]];
-            if (![arg isEqualToString:@"--print-attributes"])
-                continue;
-            shouldDumpAttributes = YES;
-            break;
-        }
 
         // inputs
         NSDictionary* inputs;
@@ -345,17 +336,60 @@ int main(int argc, const char * argv[]) {
             }];
         }
 
-        RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
-        if (shouldDumpAttributes) {
-            [renderSlave dumpAttributes];
-            return 0;
+        // arg-less switches print inputs, GUI
+        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO;
+        for (NSUInteger idx = 2; idx < argc; idx++) {
+            NSString* arg = [NSString stringWithUTF8String:argv[idx]];
+            if ([arg isEqualToString:@"--print-attributes"])
+                shouldDumpAttributes = YES;
+            else if ([arg isEqualToString:@"--gui"])
+                shouldLoadGUI = YES;
         }
-        [renderSlave startRendering];
 
-//        [[NSRunLoop currentRunLoop] run];
-        // WORKAROUND - Syphon requires an application, it is unhappy otherwise!
-        //  http://code.google.com/p/syphon-framework/issues/detail?id=18
-        [[NSApplication sharedApplication] run];
+
+        void (^renderSlaveSetup)(void) = ^(void) {
+            RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
+            if (shouldDumpAttributes) {
+                [renderSlave dumpAttributes];
+                exit(1);
+            }
+            [renderSlave startRendering];
+        };
+
+
+        // locked and loaded
+        if (!shouldLoadGUI) {
+            renderSlaveSetup();
+
+//            [[NSRunLoop currentRunLoop] run];
+            // WORKAROUND - Syphon requires an application, it is unhappy otherwise!
+            //  http://code.google.com/p/syphon-framework/issues/detail?id=18
+            [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:[NSApplication sharedApplication] queue:nil usingBlock:^(NSNotification*notification) {
+                renderSlaveSetup();
+            }];
+
+            [NSApp run];
+        } else {
+            // go GUI, cheers to http://cocoawithlove.com/2010/09/minimalist-cocoa-programming.html
+            [[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyRegular];
+
+            [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:NSApp queue:nil usingBlock:^(NSNotification*notification) {
+                renderSlaveSetup();
+            }];
+
+            // setup a basic application menu
+            NSMenu* menu = [[NSMenu alloc] init];
+            NSMenuItem* applicationMenuItem = [[NSMenuItem alloc] init];
+            [menu addItem:applicationMenuItem];
+            [NSApp setMainMenu:menu];
+            NSMenu* applicationMenu = [[NSMenu alloc] init];
+            NSString* applicationName = [[NSRunningApplication currentApplication] localizedName];
+            NSMenuItem* quitMenuItem = [[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Quit %@", applicationName] action:@selector(terminate:) keyEquivalent:@"q"];
+            [applicationMenu addItem:quitMenuItem];
+            [applicationMenuItem setSubmenu:applicationMenu];
+
+            [NSApp run];   
+        }        
     }
     return 0;
 }
