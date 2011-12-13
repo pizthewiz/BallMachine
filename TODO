@@ -8,7 +8,7 @@ NOW
 [X] support some sort of input port key > value setting
     --inputs switch with JSON string
 [X] offer means to define additional folder to load plug-ins from
-[ ] provide option to dump input keys and type
+[X] provide option to dump input keys and type
 [ ] add help and version switches
 [ ] add switch to accept JSON settings file
 

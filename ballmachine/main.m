@@ -106,9 +106,11 @@
 @property (nonatomic) NSTimeInterval startTime;
 - (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
 - (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs;
+- (void)dumpKeysAndDescriptions;
 - (void)startRendering;
 - (void)stopRendering;
 - (void)_render;
+- (NSString*)_descriptionForKey:(NSString*)key;
 @end
 
 @implementation RenderSlave
@@ -126,7 +128,9 @@
 }
 
 - (void)dealloc {
-    [self stopRendering];
+    if (self.renderTimer) {
+        [self stopRendering];
+    }
 }
 
 - (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs {
@@ -155,6 +159,28 @@
 
         [self.renderer setValue:obj forInputKey:key];
     }];
+}
+
+- (void)dumpKeysAndDescriptions {
+    printf("INPUT KEYS\n");
+    if (self.renderer.inputKeys.count > 0) {
+        [self.renderer.inputKeys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            printf("\t%s\n", [[self _descriptionForKey:(NSString*)obj] UTF8String]);
+        }];
+    } else {
+        printf("\t--NONE--\n");
+    }
+
+    printf("OUTPUT KEYS\n");
+    if (self.renderer.outputKeys.count > 0) {
+        [self.renderer.outputKeys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            printf("\t%s\n", [[self _descriptionForKey:(NSString*)obj] UTF8String]);
+        }];
+    } else {
+        printf("\t--NONE--\n");
+    }
+
+//    NSLog(@"%@", self.renderer.attributes);
 }
 
 - (void)startRendering {
@@ -193,6 +219,16 @@
     }
 }
 
+- (NSString*)_descriptionForKey:(NSString*)key {
+    // TODO - this could be made much more rich
+    //  default values
+    //  min/max for numbers
+    //  values for index
+    NSDictionary* keyAttributes = [self.renderer.attributes objectForKey:key];
+    NSString* description = [NSString stringWithFormat:@"%@ (%@)", key, [keyAttributes objectForKey:@"QCPortAttributeTypeKey"]];
+    return description;
+}
+
 @end
 
 #pragma mark -
@@ -203,7 +239,7 @@ void usage(const char * argv[]) {
     printf("\nOPTIONS:\n");
     printf("\t--canvas-size\tset offscreen canvas size, E.g. '1920x1080'\n");
     printf("\t--max-framerate\tset maximum rendering framerate\n\n");
-//    printf("\t--print-inputs\tprint all composition input keys\n");
+    printf("\t--print-inputs\tprint all composition input keys and quit\n");
     printf("\t--inputs\tdefine key value pairs in JSON - ESCAPE LIKE MAD!\n\n");
     printf("\t--plugin-path\tprovide additional directory of plug-ins to load\n");
 }
@@ -236,6 +272,16 @@ int main(int argc, const char * argv[]) {
 
         // framerate
         CGFloat framerate = [args floatForKey:@"-max-framerate"];
+
+        // print inputs
+        BOOL shouldDumpInputs = NO;
+        for (NSUInteger idx = 2; idx < argc; idx++) {
+            NSString* arg = [NSString stringWithUTF8String:argv[idx]];
+            if (![arg isEqualToString:@"--print-inputs"])
+                continue;
+            shouldDumpInputs = YES;
+            break;
+        }
 
         // inputs
         NSDictionary* inputs;
@@ -288,6 +334,10 @@ int main(int argc, const char * argv[]) {
         }
 
         RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
+        if (shouldDumpInputs) {
+            [renderSlave dumpKeysAndDescriptions];
+            return 0;
+        }
         [renderSlave startRendering];
 
 //        [[NSRunLoop currentRunLoop] run];
