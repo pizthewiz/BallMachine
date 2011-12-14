@@ -22,7 +22,7 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
-#define VERSION "v0.2.1-pre"
+#define VERSION "v0.2.1"
 
 @interface NSURL(CCAdditions)
 - (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
