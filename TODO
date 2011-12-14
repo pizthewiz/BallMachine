@@ -9,7 +9,7 @@ NOW
     --inputs switch with JSON string
 [X] offer means to define additional folder to load plug-ins from
 [X] provide option to dump input keys and type
-[ ] add help and version switches
+[X] add version switch
 [ ] add switch to accept JSON settings file
 
 LATER
