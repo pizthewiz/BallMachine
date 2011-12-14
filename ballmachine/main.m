@@ -359,16 +359,21 @@ int main(int argc, const char * argv[]) {
 
         // locked and loaded
         if (!shouldLoadGUI) {
-            renderSlaveSetup();
-
-//            [[NSRunLoop currentRunLoop] run];
-            // WORKAROUND - Syphon requires an application, it is unhappy otherwise!
+#if 0
+            // setup slave at the end of the runloop
+            dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, 0 * NSEC_PER_SEC);
+            dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+                renderSlaveSetup();
+            });
+            [[NSRunLoop currentRunLoop] run];
+#else
+            // WORKAROUND - Syphon requires an application, it is otherwise unhappy
             //  http://code.google.com/p/syphon-framework/issues/detail?id=18
             [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:[NSApplication sharedApplication] queue:nil usingBlock:^(NSNotification*notification) {
                 renderSlaveSetup();
             }];
-
             [NSApp run];
+#endif
         } else {
             // go GUI, cheers to http://cocoawithlove.com/2010/09/minimalist-cocoa-programming.html
             [[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -388,8 +393,8 @@ int main(int argc, const char * argv[]) {
             [applicationMenu addItem:quitMenuItem];
             [applicationMenuItem setSubmenu:applicationMenu];
 
-            [NSApp run];   
-        }        
+            [NSApp run];
+        }
     }
     return 0;
 }
