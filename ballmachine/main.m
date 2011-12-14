@@ -22,6 +22,8 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
+#define VERSION "v0.2.1-pre"
+
 @interface NSURL(CCAdditions)
 - (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
 @end
@@ -247,18 +249,41 @@
 
 void usage(const char * argv[]);
 void usage(const char * argv[]) {
-    printf("usage: %s <composition> [options]\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String]);
+    NSString* name = [[NSString stringWithUTF8String:argv[0]] lastPathComponent];
+    printf("usage: %s <composition> [options]\n", [name UTF8String]);
     printf("\nOPTIONS:\n");
-    printf("\t--canvas-size\tset offscreen canvas size, E.g. '1920x1080'\n");
-    printf("\t--max-framerate\tset maximum rendering framerate\n\n");
-    printf("\t--print-attributes\tprint composition io port details and quit\n");
-    printf("\t--inputs\tdefine key value pairs in JSON - ESCAPE LIKE MAD!\n\n");
-    printf("\t--plugin-path\tprovide additional directory of plug-ins to load\n\n");
-    printf("\t--gui\trun tool as a GUI application with a window server connection\n");
+    printf("  --version\t\tprint %s's version\n\n", [name UTF8String]);
+    printf("  --canvas-size=val\tset offscreen canvas size, E.g. '1920x1080'\n");
+    printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
+    printf("  --print-attributes\tprint composition port details\n");
+    printf("  --inputs=pairs\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
+    printf("  --plugin-path=path\tprovide additional directory of plug-ins to load\n\n");
+    printf("  --gui\t\t\trun as a GUI application with a window server connection\n");
+}
+void version(const char * argv[]);
+void version(const char * argv[]) {
+    printf("%s %s\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String], VERSION);
 }
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
+        // arg-less switches
+        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO;
+        for (NSUInteger idx = 1; idx < argc; idx++) {
+            NSString* arg = [NSString stringWithUTF8String:argv[idx]];
+            if ([arg isEqualToString:@"--print-attributes"])
+                shouldDumpAttributes = YES;
+            else if ([arg isEqualToString:@"--gui"])
+                shouldLoadGUI = YES;
+            else if ([arg isEqualToString:@"--version"])
+                shouldPrintVersion = YES;
+        }
+
+        if (shouldPrintVersion) {
+            version(argv);
+            return 0;
+        }
+
         // source composition is required
         if (argc < 2) {
             usage(argv);
@@ -336,22 +361,12 @@ int main(int argc, const char * argv[]) {
             }];
         }
 
-        // arg-less switches print inputs, GUI
-        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO;
-        for (NSUInteger idx = 2; idx < argc; idx++) {
-            NSString* arg = [NSString stringWithUTF8String:argv[idx]];
-            if ([arg isEqualToString:@"--print-attributes"])
-                shouldDumpAttributes = YES;
-            else if ([arg isEqualToString:@"--gui"])
-                shouldLoadGUI = YES;
-        }
-
 
         void (^renderSlaveSetup)(void) = ^(void) {
             RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
             if (shouldDumpAttributes) {
                 [renderSlave dumpAttributes];
-                exit(1);
+                exit(0);
             }
             [renderSlave startRendering];
         };
