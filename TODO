@@ -11,6 +11,8 @@ NOW
 [X] provide option to dump input keys and type
 [X] add version switch
 [ ] add switch to accept JSON settings file
+[ ] provide ability to render composition directly on specified screen
+[ ] provide switch to print available screens
 
 LATER
 [\] generate image sequence / movie file
