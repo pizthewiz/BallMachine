@@ -22,7 +22,7 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
-#define VERSION "v0.2.1"
+#define VERSION "v0.2.2-pre"
 
 @interface NSURL(CCAdditions)
 - (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
@@ -166,8 +166,8 @@
 - (void)dumpAttributes {
     printf("INPUT KEYS\n");
     if (self.renderer.inputKeys.count > 0) {
-        [self.renderer.inputKeys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-            printf("\t%s\n", [[self _descriptionForKey:(NSString*)obj] UTF8String]);
+        [self.renderer.inputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
+            printf("\t%s\n", [[self _descriptionForKey:key] UTF8String]);
         }];
     } else {
         printf("\t--NONE--\n");
@@ -175,8 +175,8 @@
 
     printf("OUTPUT KEYS\n");
     if (self.renderer.outputKeys.count > 0) {
-        [self.renderer.outputKeys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-            printf("\t%s\n", [[self _descriptionForKey:(NSString*)obj] UTF8String]);
+        [self.renderer.outputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
+            printf("\t%s\n", [[self _descriptionForKey:key] UTF8String]);
         }];
     } else {
         printf("\t--NONE--\n");
@@ -253,22 +253,56 @@ void usage(const char * argv[]) {
     printf("usage: %s <composition> [options]\n", [name UTF8String]);
     printf("\nOPTIONS:\n");
     printf("  --version\t\tprint %s's version\n\n", [name UTF8String]);
-    printf("  --canvas-size=val\tset offscreen canvas size, E.g. '1920x1080'\n");
-    printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
     printf("  --print-attributes\tprint composition port details\n");
     printf("  --inputs=pairs\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
+    printf("  --canvas-size=val\tset offscreen canvas size, E.g. '1920x1080'\n");
+    printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
     printf("  --plugin-path=path\tprovide additional directory of plug-ins to load\n\n");
     printf("  --gui\t\t\trun as a GUI application with a window server connection\n");
+    printf("  --print-screens\tprint descriptions for available screens\n");
+//    printf("  --screen=val\t\tset screen composition will be rendered and displayed on\n\n");
 }
 void version(const char * argv[]);
 void version(const char * argv[]) {
     printf("%s %s\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String], VERSION);
 }
+int printDisplays(void);
+int printDisplays(void) {
+    uint32_t displayCount;
+    CGError error = CGGetOnlineDisplayList(0, NULL, &displayCount);
+    if (error != kCGErrorSuccess) {
+        CCErrorLog(@"ERROR - failed to get online display list");
+        return -1;
+    }
+    CGDirectDisplayID* displays = (CGDirectDisplayID*)calloc(displayCount, sizeof(CGDirectDisplayID));
+    error = CGGetOnlineDisplayList(displayCount, displays, &displayCount);
+    if (error != kCGErrorSuccess) {
+        CCErrorLog(@"ERROR - failed to get online display list");
+        return -1;
+    }
+
+    for (NSUInteger idx = 0; idx < displayCount; idx++) {
+        CGDirectDisplayID display = displays[idx];
+        CGSize displaySize = CGDisplayBounds(display).size;
+        BOOL isMain = CGDisplayIsMain(display);
+        BOOL isAccelerated = CGDisplayUsesOpenGLAcceleration(display);
+        NSString* description = [NSString stringWithFormat:@"%u - %0.fx%0.f%@%@", CGDisplayUnitNumber(display), displaySize.width, displaySize.height, (isMain ? @" (MAIN)" : @""), (!isAccelerated ? @" [UNACCELERATED]" : @"")];
+        printf("%s\n", [description UTF8String]);
+    }
+    free(displays);
+
+//    [[NSScreen screens] enumerateObjectsUsingBlock:^(NSScreen* screen, NSUInteger idx, BOOL *stop) {
+//        printf("%lu - \n", idx);
+//        CCDebugLog(@"%@ - %@\n", screen, screen.deviceDescription);
+//    }];
+
+    return 0;
+}
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         // arg-less switches
-        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO;
+        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintScreens = NO;
         for (NSUInteger idx = 1; idx < argc; idx++) {
             NSString* arg = [NSString stringWithUTF8String:argv[idx]];
             if ([arg isEqualToString:@"--print-attributes"])
@@ -277,11 +311,16 @@ int main(int argc, const char * argv[]) {
                 shouldLoadGUI = YES;
             else if ([arg isEqualToString:@"--version"])
                 shouldPrintVersion = YES;
+            else if ([arg isEqualToString:@"--print-screens"])
+                shouldPrintScreens = YES;
         }
 
         if (shouldPrintVersion) {
             version(argv);
             return 0;
+        }
+        if (shouldPrintScreens) {
+            return printDisplays();
         }
 
         // source composition is required
