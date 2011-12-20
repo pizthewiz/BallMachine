@@ -227,19 +227,13 @@
     //  min/max for numbers
     //  values for index
     NSDictionary* keyAttributes = [self.renderer.attributes objectForKey:key];
-    NSString* description = nil;
     NSString* type = [keyAttributes objectForKey:QCPortAttributeTypeKey];
     NSObject* minValue = [keyAttributes objectForKey:QCPortAttributeMinimumValueKey];
     NSObject* maxValue = [keyAttributes objectForKey:QCPortAttributeMaximumValueKey];
     NSObject* defaultValue = [keyAttributes objectForKey:QCPortAttributeDefaultValueKey];
+    NSObject* value = [self.renderer valueForInputKey:key];
 
-    description = [NSString stringWithFormat:@"%@ (%@)", key, type];
-    if (minValue || maxValue) {
-        description = [NSString stringWithFormat:@"%@ : %@-%@ %@", description, (minValue ? minValue : @"?"), (maxValue ? maxValue : @"?"), (defaultValue ? [NSString stringWithFormat:@"[%@]", defaultValue] : @"")];
-    } else if (defaultValue) {
-        description = [NSString stringWithFormat:@"%@ : [%@]", description, defaultValue];
-    }
-
+    NSString* description = [NSString stringWithFormat:@"%@ / %@ : %@%@%@", key, type, (minValue || maxValue ? [NSString stringWithFormat:@"[%@-%@]", (minValue ? minValue : @"?"), (maxValue ? maxValue : @"?")] : @""), (defaultValue ? [NSString stringWithFormat:@" (%@)", defaultValue] : @""), (value ? [NSString stringWithFormat:@" %@", value] : @"")];
     return description;
 }
 
