@@ -255,12 +255,12 @@ void usage(const char * argv[]) {
     printf("  --version\t\tprint %s's version\n\n", [name UTF8String]);
     printf("  --print-attributes\tprint composition port details\n");
     printf("  --inputs=pairs\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
-    printf("  --canvas-size=val\tset offscreen canvas size, E.g. '1920x1080'\n");
+    printf("  --canvas-size=val\tset canvas size, E.g. '1920x1080'\n");
     printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
     printf("  --plugin-path=path\tprovide additional directory of plug-ins to load\n\n");
-    printf("  --gui\t\t\trun as a GUI application with a window server connection\n");
-    printf("  --print-screens\tprint descriptions for available screens\n");
-//    printf("  --screen=val\t\tset screen composition will be rendered and displayed on\n\n");
+    printf("  --print-displays\tprint descriptions for available displays\n");
+    printf("  --display=val\t\tset display composition will be drawn to\n");
+    printf("  --window-server\trun with a window server connection\n");
 }
 void version(const char * argv[]);
 void version(const char * argv[]) {
@@ -302,24 +302,24 @@ int printDisplays(void) {
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         // arg-less switches
-        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintScreens = NO;
+        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintDisplays = NO;
         for (NSUInteger idx = 1; idx < argc; idx++) {
             NSString* arg = [NSString stringWithUTF8String:argv[idx]];
             if ([arg isEqualToString:@"--print-attributes"])
                 shouldDumpAttributes = YES;
-            else if ([arg isEqualToString:@"--gui"])
+            else if ([arg isEqualToString:@"--window-server"])
                 shouldLoadGUI = YES;
             else if ([arg isEqualToString:@"--version"])
                 shouldPrintVersion = YES;
-            else if ([arg isEqualToString:@"--print-screens"])
-                shouldPrintScreens = YES;
+            else if ([arg isEqualToString:@"--print-displays"])
+                shouldPrintDisplays = YES;
         }
 
         if (shouldPrintVersion) {
             version(argv);
             return 0;
         }
-        if (shouldPrintScreens) {
+        if (shouldPrintDisplays) {
             return printDisplays();
         }
 
