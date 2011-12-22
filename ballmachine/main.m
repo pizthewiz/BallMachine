@@ -97,8 +97,8 @@
 @end
 
 #define MAX_FRAMERATE_DEFAULT 30.
-#define CANVAS_WIDTH_DEFAULT 1280.
-#define CANVAS_HEIGHT_DEFAULT 720.
+#define CANVAS_WIDTH_OFFLINE_DEFAULT 1280.
+#define CANVAS_HEIGHT_OFFLINE_DEFAULT 720.
 
 @interface RenderSlave : NSObject <NSApplicationDelegate>
 @property (nonatomic) CGFloat maximumFramerate;
@@ -123,7 +123,7 @@
     self = [super init];
     if (self) {
         self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_DEFAULT;
-        self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_DEFAULT, CANVAS_HEIGHT_DEFAULT);
+        self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_OFFLINE_DEFAULT, CANVAS_HEIGHT_OFFLINE_DEFAULT);
         [self loadCompositionAtURL:location withInputPairs:inputs];
     }
     return self;
@@ -141,7 +141,7 @@
     QCComposition* composition = [QCComposition compositionWithFile:location.path];
     if (!composition) {
         CCErrorLog(@"ERROR - failed to create composition from path '%@'", location.path);
-        exit(0);
+        exit(1);
     }
 
     CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
@@ -149,7 +149,7 @@
     CGColorSpaceRelease(rgbColorSpace);
     if (!self.renderer) {
         CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
-        exit(0);
+        exit(1);
     }
 
     // set inputs
@@ -251,9 +251,9 @@ void usage(const char * argv[]) {
     printf("  --inputs=pairs\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
     printf("  --canvas-size=val\tset canvas size, E.g. '1920x1080'\n");
     printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
-    printf("  --plugin-path=path\tprovide additional directory of plug-ins to load\n\n");
+    printf("  --plugin-path=path\tadditional directory of plug-ins to load\n\n");
     printf("  --print-displays\tprint descriptions for available displays\n");
-    printf("  --display=val\t\tset display composition will be drawn to\n");
+    printf("  --display=val\t\tset display ID composition will be drawn to\n");
     printf("  --window-server\trun with a window server connection\n");
 }
 void version(const char * argv[]);
@@ -266,13 +266,13 @@ int printDisplays(void) {
     CGError error = CGGetOnlineDisplayList(0, NULL, &displayCount);
     if (error != kCGErrorSuccess) {
         CCErrorLog(@"ERROR - failed to get online display list");
-        return -1;
+        return 1;
     }
     CGDirectDisplayID* displays = (CGDirectDisplayID*)calloc(displayCount, sizeof(CGDirectDisplayID));
     error = CGGetOnlineDisplayList(displayCount, displays, &displayCount);
     if (error != kCGErrorSuccess) {
         CCErrorLog(@"ERROR - failed to get online display list");
-        return -1;
+        return 1;
     }
 
     for (NSUInteger idx = 0; idx < displayCount; idx++) {
@@ -320,7 +320,7 @@ int main(int argc, const char * argv[]) {
         // source composition is required
         if (argc < 2) {
             usage(argv);
-            return -1;
+            return 1;
         }
 
         NSString* compositionFilePath = [NSString stringWithUTF8String:argv[1]];
@@ -328,12 +328,14 @@ int main(int argc, const char * argv[]) {
         // double check
         if (![compositionLocation isFileURL]) {
             CCErrorLog(@"ERROR - filed to create URL for path '%@'", compositionFilePath);
-            return -1;
+            usage(argv);
+            return 1;
         }
         NSError* error;
         if (![compositionLocation checkResourceIsReachableAndReturnError:&error]) {
             CCErrorLog(@"ERROR - bad source composition URL: %@", [error localizedDescription]);
-            return -1;
+            usage(argv);
+            return 1;
         }
 
         // output size
@@ -357,7 +359,7 @@ int main(int argc, const char * argv[]) {
             if (error) {
                 CCErrorLog(@"ERROR - failed to deserialize JSON - %@", [error localizedDescription]);
                 usage(argv);
-                return -1;
+                return 1;
             }
             CCDebugLog(@"inputs:%@", inputs);
         }
@@ -369,17 +371,17 @@ int main(int argc, const char * argv[]) {
             // double check
             if (![plugInFolderLocation isFileURL]) {
                 CCErrorLog(@"ERROR - filed to create URL for path '%@'", plugInFolderPath);
-                return -1;
+                return 1;
             }
             if (![plugInFolderLocation checkResourceIsReachableAndReturnError:&error]) {
                 CCErrorLog(@"ERROR - bad extra plug-in directory URL: %@", [error localizedDescription]);
-                return -1;
+                return 1;
             }
 
             NSArray* contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[plugInFolderLocation path] error:&error];
             if (error) {
                 CCErrorLog(@"ERROR - failed to get contents for plug-in directory - %@", [error localizedDescription]);
-                return -1;
+                return 1;
             }
             [contents enumerateObjectsUsingBlock:^(NSString* fileName, NSUInteger idx, BOOL *stop) {
                 if (![fileName hasSuffix:@"plugin"])
