@@ -440,6 +440,8 @@ int main(int argc, const char * argv[]) {
                 BOOL status = displayForUnitNumber(displayUnitNumber, &displayID);
                 if (!status) {
                     CCErrorLog(@"ERROR - failed to find display with unit number %u", displayUnitNumber);
+                    printf("known displays:\n");
+                    printDisplays();
                     return -1;
                 }
             } else {
