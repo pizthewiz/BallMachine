@@ -112,7 +112,7 @@
 - (void)startRendering;
 - (void)stopRendering;
 - (void)_render;
-- (NSString*)_descriptionForKey:(NSString*)key;
+- (NSString*)_portDescriptionForKey:(NSString*)key;
 @end
 
 @implementation RenderSlave
@@ -167,7 +167,7 @@
     printf("INPUT KEYS\n");
     if (self.renderer.inputKeys.count > 0) {
         [self.renderer.inputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
-            printf("\t%s\n", [[self _descriptionForKey:key] UTF8String]);
+            printf("\t%s\n", [[self _portDescriptionForKey:key] UTF8String]);
         }];
     } else {
         printf("\t--NONE--\n");
@@ -176,7 +176,7 @@
     printf("OUTPUT KEYS\n");
     if (self.renderer.outputKeys.count > 0) {
         [self.renderer.outputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
-            printf("\t%s\n", [[self _descriptionForKey:key] UTF8String]);
+            printf("\t%s\n", [[self _portDescriptionForKey:key] UTF8String]);
         }];
     } else {
         printf("\t--NONE--\n");
@@ -221,7 +221,7 @@
     }
 }
 
-- (NSString*)_descriptionForKey:(NSString*)key {
+- (NSString*)_portDescriptionForKey:(NSString*)key {
     // TODO - this could be made much more rich
     //  default values
     //  min/max for numbers
