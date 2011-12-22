@@ -10,14 +10,15 @@ NOW
 [X] offer means to define additional folder to load plug-ins from
 [X] provide option to dump input keys and type
 [X] add version switch
-[ ] add switch to accept JSON settings file
+[X] provide switch to print available screens
 [ ] provide ability to render composition directly on specified screen
-[ ] provide switch to print available screens
+[ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
 
 LATER
+[ ] consider setting up OpenGL context manually to define settings
+[ ] add switch to accept JSON settings file
 [\] generate image sequence / movie file
     suggest use of Syhpn and Syphon Recorder instead
 [ ] flip back to usng a raw runloop once Syphon no longer requires an NSApplication
     http://code.google.com/p/syphon-framework/issues/detail?id=18
 [ ] offer command-line option to load source composition inside Syphon Server composition
-[ ] consider setting up OpenGL context manually to define settings
