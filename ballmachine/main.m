@@ -52,7 +52,7 @@
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block;
 - (void)cancel;
 + (NSTimeInterval)now;
-@end;
+@end
 @implementation RenderTimer
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
     self = [super init];
@@ -253,7 +253,7 @@ void usage(const char * argv[]) {
     printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
     printf("  --plugin-path=path\tadditional directory of plug-ins to load\n\n");
     printf("  --print-displays\tprint descriptions for available displays\n");
-    printf("  --display=val\t\tset display ID composition will be drawn to\n");
+    printf("  --display=val\t\tset display unit number composition will be drawn to\n");
     printf("  --window-server\trun with a window server connection\n");
 }
 void version(const char * argv[]);
@@ -272,6 +272,7 @@ int printDisplays(void) {
     error = CGGetOnlineDisplayList(displayCount, displays, &displayCount);
     if (error != kCGErrorSuccess) {
         CCErrorLog(@"ERROR - failed to get online display list");
+        free(displays);
         return 1;
     }
 
@@ -292,11 +293,42 @@ int printDisplays(void) {
 
     return 0;
 }
+BOOL displayForUnitNumber(uint32_t unitNumber, CGDirectDisplayID* displayID);
+BOOL displayForUnitNumber(uint32_t unitNumber, CGDirectDisplayID* displayID) {
+    BOOL status = NO;
+
+    uint32_t displayCount;
+    CGError error = CGGetOnlineDisplayList(0, NULL, &displayCount);
+    if (error != kCGErrorSuccess) {
+        CCErrorLog(@"ERROR - failed to get online display list");
+        return NO;
+    }
+    CGDirectDisplayID* displays = (CGDirectDisplayID*)calloc(displayCount, sizeof(CGDirectDisplayID));
+    error = CGGetOnlineDisplayList(displayCount, displays, &displayCount);
+    if (error != kCGErrorSuccess) {
+        CCErrorLog(@"ERROR - failed to get online display list");
+        free(displays);
+        return NO;
+    }
+
+    for (NSUInteger idx = 0; idx < displayCount; idx++) {
+        CGDirectDisplayID display = displays[idx];
+        if (CGDisplayUnitNumber(display) != unitNumber)
+            continue;
+
+        *displayID = display;
+        status = YES;
+        break;
+    }
+    free(displays);
+
+    return status;
+}
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         // arg-less switches
-        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintDisplays = NO;
+        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintDisplays = NO, shouldRenderOffline = YES;
         for (NSUInteger idx = 1; idx < argc; idx++) {
             NSString* arg = [NSString stringWithUTF8String:argv[idx]];
             if ([arg isEqualToString:@"--print-attributes"])
@@ -307,6 +339,8 @@ int main(int argc, const char * argv[]) {
                 shouldPrintVersion = YES;
             else if ([arg isEqualToString:@"--print-displays"])
                 shouldPrintDisplays = YES;
+            else if ([arg isEqualToString:@"--display"])
+                shouldRenderOffline = NO;
         }
 
         if (shouldPrintVersion) {
@@ -341,7 +375,8 @@ int main(int argc, const char * argv[]) {
         // output size
         NSUserDefaults* args = [NSUserDefaults standardUserDefaults];
         NSString* sizeString = [args stringForKey:@"-canvas-size"];
-        NSSize size = sizeString ? NSSizeFromString(sizeString) : NSZeroSize;
+        // TODO - respect canvas size for online render
+        NSSize size = sizeString && shouldRenderOffline ? NSSizeFromString(sizeString) : NSZeroSize;
 
         // framerate
         CGFloat framerate = [args floatForKey:@"-max-framerate"];
@@ -394,6 +429,26 @@ int main(int argc, const char * argv[]) {
                     return;
                 }
             }];
+        }
+
+        // display
+        if (!shouldRenderOffline) {
+            NSString* displayNumberString = [args stringForKey:@"-display"];
+            CGDirectDisplayID displayID = 0;
+            if (displayNumberString) {
+                uint32_t displayUnitNumber = [displayNumberString intValue];
+                BOOL status = displayForUnitNumber(displayUnitNumber, &displayID);
+                if (!status) {
+                    CCErrorLog(@"ERROR - failed to find display with unit number %u", displayUnitNumber);
+                    return -1;
+                }
+            } else {
+                displayID = CGMainDisplayID();
+            }
+
+            CCDebugLog(@"display is %@accelerated", CGDisplayUsesOpenGLAcceleration(displayID) ? @"" : @"NOT ");
+
+            // TODO - setup pixel format and context
         }
 
 
