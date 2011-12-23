@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <Quartz/Quartz.h>
 #import <mach/mach_time.h>
+#import <OpenGL/CGLRenderers.h>
 
 #ifdef DEBUG
     #define CCDebugLogSelector() NSLog(@"-[%@ %@]", /*NSStringFromClass([self class])*/self, NSStringFromSelector(_cmd))
@@ -23,6 +24,9 @@
 #endif
 
 #define VERSION "v0.2.2-pre"
+
+// NB - avoid the long arm of ARC
+NSWindow* window = nil;
 
 @interface NSURL(CCAdditions)
 - (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
@@ -96,19 +100,21 @@
 }
 @end
 
-#define MAX_FRAMERATE_DEFAULT 30.
+#define MAX_FRAMERATE_OFFLINE_DEFAULT 30.
 #define CANVAS_WIDTH_OFFLINE_DEFAULT 1280.
 #define CANVAS_HEIGHT_OFFLINE_DEFAULT 720.
 
-@interface RenderSlave : NSObject <NSApplicationDelegate>
+@interface RenderSlave : NSObject
 @property (nonatomic) CGFloat maximumFramerate;
 @property (nonatomic) NSSize canvasSize;
 @property (nonatomic, strong) QCRenderer* renderer;
 @property (nonatomic, strong) RenderTimer* renderTimer;
 @property (nonatomic) NSTimeInterval startTime;
-- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
+@property (nonatomic, strong) NSOpenGLContext* context;
+@property (nonatomic, strong) NSOpenGLPixelFormat* pixelFormat;
+- (id)initWithContext:(NSOpenGLContext*)context pixelFormat:(NSOpenGLPixelFormat*)pixelFormat composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
 - (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs;
-- (void)dumpAttributes;
+- (void)printCompositionAttributes;
 - (void)startRendering;
 - (void)stopRendering;
 - (void)_render;
@@ -117,12 +123,14 @@
 
 @implementation RenderSlave
 
-@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime;
+@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime, context, pixelFormat;
 
-- (id)initWithCompositionAtURL:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
+- (id)initWithContext:(NSOpenGLContext*)ctx pixelFormat:(NSOpenGLPixelFormat*)format composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
     self = [super init];
     if (self) {
-        self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_DEFAULT;
+        self.context = ctx;
+        self.pixelFormat = format;
+        self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_OFFLINE_DEFAULT;
         self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_OFFLINE_DEFAULT, CANVAS_HEIGHT_OFFLINE_DEFAULT);
         [self loadCompositionAtURL:location withInputPairs:inputs];
     }
@@ -144,12 +152,22 @@
         exit(1);
     }
 
-    CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-    self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:rgbColorSpace composition:composition];
-    CGColorSpaceRelease(rgbColorSpace);
-    if (!self.renderer) {
-        CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
-        exit(1);
+    // online render
+    if (self.context) {
+        // TODO - the colorspace should come from the display
+        self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
+        if (!self.renderer) {
+            CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
+            exit(1);
+        }
+    }
+    // offline render
+    else {
+        self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:composition];
+        if (!self.renderer) {
+            CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
+            exit(1);
+        }
     }
 
     // set inputs
@@ -163,7 +181,7 @@
     }];
 }
 
-- (void)dumpAttributes {
+- (void)printCompositionAttributes {
     printf("INPUT KEYS\n");
     if (self.renderer.inputKeys.count > 0) {
         [self.renderer.inputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
@@ -211,7 +229,17 @@
 //    CCDebugLog(@"now:%f relativeTime:%f nextRenderTime:%f", now, relativeTime, nextRenderTime);
     if (relativeTime >= nextRenderTime) {
 //        CCDebugLog(@"\trendering");
+
+        if (self.context) {
+            CGLLockContext([self.context CGLContextObj]);
+        }
+
         [renderer renderAtTime:relativeTime arguments:nil];
+
+        if (self.context) {
+            [self.context flushBuffer];
+            CGLUnlockContext([self.context CGLContextObj]);            
+        }
 
         // DEBUG WRITE UGLY IMAGES TO TMP
 //        NSImage* image = [renderer snapshotImage];
@@ -256,8 +284,8 @@ void usage(const char * argv[]) {
     printf("  --display=val\t\tset display unit number composition will be drawn to\n");
     printf("  --window-server\trun with a window server connection\n");
 }
-void version(const char * argv[]);
-void version(const char * argv[]) {
+void printVersion(const char * argv[]);
+void printVersion(const char * argv[]) {
     printf("%s %s\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String], VERSION);
 }
 int printDisplays(void);
@@ -324,15 +352,27 @@ BOOL displayForUnitNumber(uint32_t unitNumber, CGDirectDisplayID* displayID) {
 
     return status;
 }
+NSScreen* screenForDisplayID(CGDirectDisplayID displayID);
+NSScreen* screenForDisplayID(CGDirectDisplayID displayID) {
+    __block NSScreen* screen;
+    [[NSScreen screens] enumerateObjectsUsingBlock:^(NSScreen* s, NSUInteger idx, BOOL *stop) {
+        CGDirectDisplayID someDisplayId = [[[s deviceDescription] objectForKey:@"NSScreenNumber"] unsignedIntValue];
+        if (someDisplayId != displayID)
+            return;
+        screen = s;
+        *stop = YES;
+    }];
+    return screen;
+}
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         // arg-less switches
-        BOOL shouldDumpAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintDisplays = NO, shouldRenderOffline = YES;
+        BOOL shouldPrintAttributes = NO, shouldLoadGUI = NO, shouldPrintVersion = NO, shouldPrintDisplays = NO, shouldUseOfflineRenderer = YES;
         for (NSUInteger idx = 1; idx < argc; idx++) {
             NSString* arg = [NSString stringWithUTF8String:argv[idx]];
             if ([arg isEqualToString:@"--print-attributes"])
-                shouldDumpAttributes = YES;
+                shouldPrintAttributes = YES;
             else if ([arg isEqualToString:@"--window-server"])
                 shouldLoadGUI = YES;
             else if ([arg isEqualToString:@"--version"])
@@ -340,11 +380,11 @@ int main(int argc, const char * argv[]) {
             else if ([arg isEqualToString:@"--print-displays"])
                 shouldPrintDisplays = YES;
             else if ([arg isEqualToString:@"--display"])
-                shouldRenderOffline = NO;
+                shouldUseOfflineRenderer = NO;
         }
 
         if (shouldPrintVersion) {
-            version(argv);
+            printVersion(argv);
             return 0;
         }
         if (shouldPrintDisplays) {
@@ -375,8 +415,7 @@ int main(int argc, const char * argv[]) {
         // output size
         NSUserDefaults* args = [NSUserDefaults standardUserDefaults];
         NSString* sizeString = [args stringForKey:@"-canvas-size"];
-        // TODO - respect canvas size for online render
-        NSSize size = sizeString && shouldRenderOffline ? NSSizeFromString(sizeString) : NSZeroSize;
+        NSSize size = sizeString ? NSSizeFromString(sizeString) : NSZeroSize;
 
         // framerate
         CGFloat framerate = [args floatForKey:@"-max-framerate"];
@@ -432,9 +471,11 @@ int main(int argc, const char * argv[]) {
         }
 
         // display
-        if (!shouldRenderOffline) {
+        CGDirectDisplayID displayID;
+        NSOpenGLPixelFormat* format;
+        NSOpenGLContext* context;
+        if (!shouldUseOfflineRenderer) {
             NSString* displayNumberString = [args stringForKey:@"-display"];
-            CGDirectDisplayID displayID = 0;
             if (displayNumberString) {
                 uint32_t displayUnitNumber = [displayNumberString intValue];
                 BOOL status = displayForUnitNumber(displayUnitNumber, &displayID);
@@ -442,22 +483,64 @@ int main(int argc, const char * argv[]) {
                     CCErrorLog(@"ERROR - failed to find display with unit number %u", displayUnitNumber);
                     printf("known displays:\n");
                     printDisplays();
-                    return -1;
+                    return 1;
                 }
             } else {
                 displayID = CGMainDisplayID();
             }
 
-            CCDebugLog(@"display is %@accelerated", CGDisplayUsesOpenGLAcceleration(displayID) ? @"" : @"NOT ");
-
-            // TODO - setup pixel format and context
+            BOOL useHardwareRenderer = CGDisplayUsesOpenGLAcceleration(displayID);
+            if (useHardwareRenderer) {
+                NSOpenGLPixelFormatAttribute attributes[] = {
+                    // NB - apparently QC and 3rd party plugins use a lot of 1.2 and 2.1 GL bits, so we cannot go 3.2
+                    NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
+#ifdef OLDSCHOOL
+                    NSOpenGLPFAFullScreen,
+                    NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(displayID),
+#endif
+                        NSOpenGLPFAAccelerated,
+                        NSOpenGLPFANoRecovery,
+                    NSOpenGLPFADoubleBuffer,
+                    NSOpenGLPFADepthSize, 24,
+                    NSOpenGLPFAMultisample,
+                    NSOpenGLPFASampleBuffers, 1,
+                    NSOpenGLPFASamples, 4,
+                    0
+                };
+                format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+                context = [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
+                if (!context) {
+                    CCErrorLog(@"ERROR - failed to create hardware rendering context with MSAA!");
+                    exit(1);
+                }
+            } else {
+                NSOpenGLPixelFormatAttribute attributes[] = {
+                    NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
+#ifdef OLDSCHOOL
+                    NSOpenGLPFAFullScreen,
+                    NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(displayID),
+#endif
+                        NSOpenGLPFARendererID, kCGLRendererGenericFloatID,
+                    NSOpenGLPFADoubleBuffer,
+                    NSOpenGLPFADepthSize, 24,
+                    0
+                };
+                format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];                
+                context = [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
+                if (!context) {
+                    CCErrorLog(@"ERROR - failed to create software rendering context!");
+                    exit(1);
+                }
+            }
+        } else {
+            // TODO - manually setup offline renderer format and context
         }
 
 
         void (^renderSlaveSetup)(void) = ^(void) {
-            RenderSlave* renderSlave = [[RenderSlave alloc] initWithCompositionAtURL:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
-            if (shouldDumpAttributes) {
-                [renderSlave dumpAttributes];
+            RenderSlave* renderSlave = [[RenderSlave alloc] initWithContext:context pixelFormat:format composition:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
+            if (shouldPrintAttributes) {
+                [renderSlave printCompositionAttributes];
                 exit(0);
             }
             [renderSlave startRendering];
@@ -465,7 +548,7 @@ int main(int argc, const char * argv[]) {
 
 
         // locked and loaded
-        if (!shouldLoadGUI) {
+        if (!shouldLoadGUI && shouldUseOfflineRenderer) {
 #if 0
             // setup slave at the end of the runloop
             dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, 0 * NSEC_PER_SEC);
@@ -479,6 +562,7 @@ int main(int argc, const char * argv[]) {
             [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:[NSApplication sharedApplication] queue:nil usingBlock:^(NSNotification*notification) {
                 renderSlaveSetup();
             }];
+
             [NSApp run];
 #endif
         } else {
@@ -489,7 +573,7 @@ int main(int argc, const char * argv[]) {
                 renderSlaveSetup();
             }];
 
-            // setup a basic application menu
+            // setup a minimal application menu
             NSMenu* menu = [[NSMenu alloc] init];
             NSMenuItem* applicationMenuItem = [[NSMenuItem alloc] init];
             [menu addItem:applicationMenuItem];
@@ -499,6 +583,36 @@ int main(int argc, const char * argv[]) {
             NSMenuItem* quitMenuItem = [[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Quit %@", applicationName] action:@selector(terminate:) keyEquivalent:@"q"];
             [applicationMenu addItem:quitMenuItem];
             [applicationMenuItem setSubmenu:applicationMenu];
+
+            // setup window for output
+            if (!shouldUseOfflineRenderer) {
+#ifdef OLDSCHOOL
+                [context setFullScreen];
+#else
+                NSScreen* screen = screenForDisplayID(displayID);
+                if (!screen) {
+                    CCErrorLog(@"ERROR - failed to fetch screen for displayID");
+                    exit(1);
+                }
+
+                // the lion way to fullscreen gl http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html
+                NSRect displayRect = [screen frame];
+                window = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];
+                [window setLevel:NSMainMenuWindowLevel+1];
+                [window setOpaque:YES];
+                [window setHidesOnDeactivate:YES];
+                
+                NSRect viewRect = NSMakeRect(0.0, 0.0, displayRect.size.width, displayRect.size.height);
+                NSOpenGLView* view = [[NSOpenGLView alloc] initWithFrame:viewRect pixelFormat:format];
+                [view setOpenGLContext:context];
+                [context setView:view];
+
+                [window setContentView:view];
+
+                [window makeKeyAndOrderFront:nil];
+                [NSApp activateIgnoringOtherApps:YES];
+#endif
+            }
 
             [NSApp run];
         }
