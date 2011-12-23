@@ -10,6 +10,7 @@
 #import <Quartz/Quartz.h>
 #import <mach/mach_time.h>
 #import <OpenGL/CGLRenderers.h>
+#import <IOKit/graphics/IOGraphicsLib.h>
 
 #ifdef DEBUG
     #define CCDebugLogSelector() NSLog(@"-[%@ %@]", /*NSStringFromClass([self class])*/self, NSStringFromSelector(_cmd))
@@ -288,6 +289,18 @@ void printVersion(const char * argv[]);
 void printVersion(const char * argv[]) {
     printf("%s %s\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String], VERSION);
 }
+NSString* nameForDisplayID(CGDirectDisplayID displayID);
+NSString* nameForDisplayID(CGDirectDisplayID displayID) {
+    NSString* screenName;
+    
+    NSDictionary* deviceInfo = (__bridge_transfer NSDictionary*)IODisplayCreateInfoDictionary(CGDisplayIOServicePort(displayID), kIODisplayOnlyPreferredName);
+    NSDictionary* localizedNames = [deviceInfo objectForKey:[NSString stringWithUTF8String:kDisplayProductName]];
+    
+    if ([localizedNames count] > 0)
+        screenName = [localizedNames objectForKey:[[localizedNames allKeys] objectAtIndex:0]];
+    
+    return screenName;
+}
 int printDisplays(void);
 int printDisplays(void) {
     uint32_t displayCount;
@@ -309,7 +322,7 @@ int printDisplays(void) {
         CGSize displaySize = CGDisplayBounds(display).size;
         BOOL isMain = CGDisplayIsMain(display);
         BOOL isAccelerated = CGDisplayUsesOpenGLAcceleration(display);
-        NSString* description = [NSString stringWithFormat:@"%u - %0.fx%0.f%@%@", CGDisplayUnitNumber(display), displaySize.width, displaySize.height, (isMain ? @" (MAIN)" : @""), (!isAccelerated ? @" [UNACCELERATED]" : @"")];
+        NSString* description = [NSString stringWithFormat:@"%u - %@ %0.fx%0.f%@%@", CGDisplayUnitNumber(display), nameForDisplayID(display), displaySize.width, displaySize.height, (isMain ? @" (MAIN)" : @""), (!isAccelerated ? @" [UNACCELERATED]" : @"")];
         printf("%s\n", [description UTF8String]);
     }
     free(displays);

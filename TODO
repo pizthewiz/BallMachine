@@ -17,7 +17,7 @@ LATER
 [ ] hide the cursor when presenting fullscreen
 [ ] clean up GL resources in willTerminate
 [ ] somehow prevent display sleep when presenting
-[ ] print nice display names
+[X] print nice display names
 [ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
 [ ] fetch display's native refresh rate when max framerate >=, use CVDisplayLink
 [ ] respect canvas size switch for online rendering
