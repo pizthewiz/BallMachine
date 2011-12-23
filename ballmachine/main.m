@@ -614,7 +614,7 @@ int main(int argc, const char * argv[]) {
                 [window setLevel:NSMainMenuWindowLevel+1];
                 [window setOpaque:YES];
                 [window setHidesOnDeactivate:YES];
-                
+
                 NSRect viewRect = NSMakeRect(0.0, 0.0, displayRect.size.width, displayRect.size.height);
                 NSOpenGLView* view = [[NSOpenGLView alloc] initWithFrame:viewRect pixelFormat:format];
                 [view setOpenGLContext:context];
@@ -624,6 +624,9 @@ int main(int argc, const char * argv[]) {
 
                 [window makeKeyAndOrderFront:nil];
                 [NSApp activateIgnoringOtherApps:YES];
+
+                // hide the cursor when presenting
+                [NSCursor hide];
 #endif
             }
 
