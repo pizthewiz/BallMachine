@@ -62,8 +62,7 @@ NSWindow* window = nil;
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
     self = [super init];
     if (self) {
-        // run on main queue for runloop love
-        _queue = dispatch_get_main_queue();
+        _queue = dispatch_queue_create("com.chordedconstructions.ballmachine", NULL);
         _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _queue);
         // NB - this fires after interval, not immediately
         dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval * NSEC_PER_SEC, 0);
@@ -84,6 +83,9 @@ NSWindow* window = nil;
         dispatch_source_cancel(_timer);
         dispatch_release(_timer);
         _timer = NULL;
+
+        dispatch_release(_queue);
+        _queue = NULL;
     });
 }
 // in nanoseconds
