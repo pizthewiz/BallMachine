@@ -62,7 +62,7 @@ NSWindow* window = nil;
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
     self = [super init];
     if (self) {
-        _queue = dispatch_queue_create("com.chordedconstructions.ballmachine", NULL);
+        _queue = dispatch_queue_create("com.chordedconstructions.fleshworld.ballmachine", NULL);
         _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _queue);
         // NB - this fires after interval, not immediately
         dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval * NSEC_PER_SEC, 0);
