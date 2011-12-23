@@ -15,7 +15,7 @@ NOW
 
 LATER
 [X] hide the cursor when presenting fullscreen
-[ ] clean up GL resources in willTerminate
+[X] clean up resources in willTerminate / SIGINT
 [ ] somehow prevent display sleep when presenting
 [X] print nice display names
 [ ] use a CVDisplayLink when rendering to a screen and framerate is not provided

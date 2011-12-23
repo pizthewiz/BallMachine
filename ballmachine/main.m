@@ -115,18 +115,20 @@ NSWindow* window = nil;
 @property (nonatomic) NSTimeInterval startTime;
 @property (nonatomic, strong) NSOpenGLContext* context;
 @property (nonatomic, strong) NSOpenGLPixelFormat* pixelFormat;
+@property (nonatomic, getter=isRendering) BOOL rendering;
 - (id)initWithContext:(NSOpenGLContext*)context pixelFormat:(NSOpenGLPixelFormat*)pixelFormat composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
 - (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs;
 - (void)printCompositionAttributes;
 - (void)startRendering;
 - (void)stopRendering;
+- (void)teardown;
 - (void)_render;
 - (NSString*)_portDescriptionForKey:(NSString*)key;
 @end
 
 @implementation RenderSlave
 
-@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime, context, pixelFormat;
+@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime, context, pixelFormat, rendering;
 
 - (id)initWithContext:(NSOpenGLContext*)ctx pixelFormat:(NSOpenGLPixelFormat*)format composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
     self = [super init];
@@ -141,9 +143,9 @@ NSWindow* window = nil;
 }
 
 - (void)dealloc {
-    if (self.renderTimer) {
-        [self stopRendering];
-    }
+    CCDebugLogSelector();
+
+    [self teardown];
 }
 
 - (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs {
@@ -152,7 +154,7 @@ NSWindow* window = nil;
     QCComposition* composition = [QCComposition compositionWithFile:location.path];
     if (!composition) {
         CCErrorLog(@"ERROR - failed to create composition from path '%@'", location.path);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // online render
@@ -161,7 +163,7 @@ NSWindow* window = nil;
         self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
         if (!self.renderer) {
             CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
     // offline render
@@ -169,7 +171,7 @@ NSWindow* window = nil;
         self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:composition];
         if (!self.renderer) {
             CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -209,6 +211,12 @@ NSWindow* window = nil;
 - (void)startRendering {
     CCDebugLogSelector();
 
+    if (self.isRendering) {
+        CCWarningLog(@"WARNING - already rendering");
+        return;
+    }
+
+    self.rendering = YES;
     self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./self.maximumFramerate) do:^{
         [self _render];
     }];
@@ -217,8 +225,22 @@ NSWindow* window = nil;
 - (void)stopRendering {
     CCDebugLogSelector();
 
+    if (!self.isRendering)
+        return;
+
+    self.rendering = NO;
     self.renderTimer = nil;
     self.startTime = 0;
+}
+
+- (void)teardown {
+    CCDebugLogSelector();
+
+    if (self.isRendering)
+        [self stopRendering];
+
+    [self.context clearDrawable];
+    self.context = nil;
 }
 
 - (void)_render {
@@ -243,12 +265,6 @@ NSWindow* window = nil;
             [self.context flushBuffer];
             CGLUnlockContext([self.context CGLContextObj]);            
         }
-
-        // DEBUG WRITE UGLY IMAGES TO TMP
-//        NSImage* image = [renderer snapshotImage];
-//        NSData* tiffData = [image TIFFRepresentation];
-//        NSURL* url = [NSURL fileURLWithPath:[NSString stringWithFormat:@"/tmp/bm-%f.tif", now]];
-//        [tiffData writeToURL:url atomically:NO];
     }
 }
 
@@ -526,7 +542,7 @@ int main(int argc, const char * argv[]) {
                 context = [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
                 if (!context) {
                     CCErrorLog(@"ERROR - failed to create hardware rendering context with MSAA!");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
             } else {
                 NSOpenGLPixelFormatAttribute attributes[] = {
@@ -544,7 +560,7 @@ int main(int argc, const char * argv[]) {
                 context = [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
                 if (!context) {
                     CCErrorLog(@"ERROR - failed to create software rendering context!");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
             }
         } else {
@@ -552,14 +568,29 @@ int main(int argc, const char * argv[]) {
         }
 
 
+        __block RenderSlave* renderSlave;
         void (^renderSlaveSetup)(void) = ^(void) {
-            RenderSlave* renderSlave = [[RenderSlave alloc] initWithContext:context pixelFormat:format composition:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
+            renderSlave = [[RenderSlave alloc] initWithContext:context pixelFormat:format composition:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
             if (shouldPrintAttributes) {
                 [renderSlave printCompositionAttributes];
-                exit(0);
+                exit(EXIT_SUCCESS);
             }
             [renderSlave startRendering];
         };
+        void (^renderSlaveTeardown)(void) = ^(void) {
+            [renderSlave teardown];
+            renderSlave = nil;
+        };
+
+
+        // SIGINT handler
+        dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, dispatch_get_global_queue(0, 0));
+        dispatch_source_set_event_handler(source, ^{
+            renderSlaveTeardown();
+            exit(EXIT_SUCCESS);
+        });
+        dispatch_resume(source);
+        sigignore(SIGINT);
 
 
         // locked and loaded
@@ -587,6 +618,9 @@ int main(int argc, const char * argv[]) {
             [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:NSApp queue:nil usingBlock:^(NSNotification*notification) {
                 renderSlaveSetup();
             }];
+            [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationWillTerminateNotification object:NSApp queue:nil usingBlock:^(NSNotification*notification) {
+                renderSlaveTeardown();
+            }];
 
             // setup a minimal application menu
             NSMenu* menu = [[NSMenu alloc] init];
@@ -607,7 +641,7 @@ int main(int argc, const char * argv[]) {
                 NSScreen* screen = screenForDisplayID(displayID);
                 if (!screen) {
                     CCErrorLog(@"ERROR - failed to fetch screen for displayID");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
 
                 // the lion way to fullscreen gl http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html
