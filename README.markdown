@@ -1,15 +1,16 @@
 
 # Ball Machine
-a small command-line tool to load and run a Quartz Composer composition off-screen for Mac OS X 10.7
+a small command-line tool to load and run a Quartz Composer composition for Mac OS X 10.7
 
 ### GENERAL
 - the canvas size, max framerate and input key:value pairs (as heavily escaped JSON) can be defined through a command-line arguments
-- the composition input and output keys and default, minimum and maximum can be printed via the --print-attributes switch
-- the tool can be run in an alternate GUI mode to provide a connection to the window server which some plug-ins may require
+- the composition input and output keys with minimum, maximum, default and current values (where applicable) can be printed via the --print-attributes switch
+- by default the composition is rendered off screen, but the --display switch can present the composition full screen on a given display. when the presentation mode is used, the canvas size argument is ignored and the display's native size is used. if no display unit number is provided, the main display will be used. when an unaccelerated display is selected, the float software renderer is used, otherwise a hardware renderer with [multisample anti-aliasing](http://en.wikipedia.org/wiki/Multisample_anti-aliasing).
+- the tool can be run in a 'gui' mode which renders off screen but provides a connection to the window server, which some plug-ins may require
 
 ### EXAMPLE
-% ballmachine ~/ProjectX/MoviePlayer.qtz --canvas-size 1920x1080 --max-framerate 60 --inputs "'{\"Movie_Source\": \"http://trailers.apple.com/movies/paramount/adventuresoftintin/tintin-tlr1_r640s.mov\", \"Volume\": 0.333}'" --plugin-path ~/ProjectX/PlugIns
+    % ballmachine ~/ProjectX/MoviePlayer.qtz --canvas-size 1920x1080 --max-framerate 60 --inputs "'{\"Movie_Source\": \"http://trailers.apple.com/movies/paramount/adventuresoftintin/tintin-tlr1_r640s.mov\", \"Volume\": 0.333}'" --plugin-path ~/ProjectX/PlugIns
 
 ### THANKS
-- Anton Marini (vade) for [Syphon](http://syphon.v002.info/) and perpetual help, even when undeserved
+- Anton Marini (vade) for [Syphon](http://syphon.v002.info/), [QCPlayerPlus](http://sourceforge.net/projects/qcadvancedplaye/) and perpetual help, even when undeserved
 - Mike Ash for his GCD Timer [MABGTimer](https://github.com/mikeash/MABGTimer/)
