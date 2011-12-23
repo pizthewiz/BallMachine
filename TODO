@@ -11,12 +11,19 @@ NOW
 [X] provide option to dump input keys and type
 [X] add version switch
 [X] provide switch to print available screens
-[ ] provide ability to render composition directly on specified screen
-[ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
+[X] provide ability to render composition directly on specified screen
 
 LATER
+[ ] hide the cursor when presenting fullscreen
+[ ] clean up GL resources in willTerminate
+[ ] somehow prevent display sleep when presenting
+[ ] print nice display names
+[ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
+[ ] fetch display's native refresh rate when max framerate >=, use CVDisplayLink
+[ ] respect canvas size switch for online rendering
 [ ] consider setting up OpenGL context manually to define settings
 [ ] add switch to accept JSON settings file
+[ ] look into a pure processing -[QCRenderer initWithComposition:colorSpace:]
 [\] generate image sequence / movie file
     suggest use of Syhpn and Syphon Recorder instead
 [ ] flip back to usng a raw runloop once Syphon no longer requires an NSApplication
