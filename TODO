@@ -12,13 +12,15 @@ NOW
 [X] add version switch
 [X] provide switch to print available screens
 [X] provide ability to render composition directly on specified screen
-[ ] sort out why a message gets logged to the console 'invalid drawable'
+[X] sort out why a message gets logged to the console 'invalid drawable'
+[ ] sort out the error canceling the render timer
 
 LATER
 [X] hide the cursor when presenting fullscreen
 [X] clean up resources in willTerminate / SIGINT
 [ ] somehow prevent display sleep when presenting
 [X] print nice display names
+[ ] somehow calculate fps
 [ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
 [ ] fetch display's native refresh rate when max framerate >=, use CVDisplayLink
 [ ] respect canvas size switch for online rendering

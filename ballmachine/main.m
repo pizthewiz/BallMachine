@@ -646,17 +646,18 @@ int main(int argc, const char * argv[]) {
 
                 // the lion way to fullscreen gl http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html
                 NSRect displayRect = [screen frame];
-                window = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];
+                window = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
                 [window setLevel:NSMainMenuWindowLevel+1];
                 [window setOpaque:YES];
                 [window setHidesOnDeactivate:YES];
 
                 NSRect viewRect = NSMakeRect(0.0, 0.0, displayRect.size.width, displayRect.size.height);
                 NSOpenGLView* view = [[NSOpenGLView alloc] initWithFrame:viewRect pixelFormat:format];
+                [window setContentView:view];
+
+                // associate once view is bound to a window
                 [view setOpenGLContext:context];
                 [context setView:view];
-
-                [window setContentView:view];
 
                 [window makeKeyAndOrderFront:nil];
                 [NSApp activateIgnoringOtherApps:YES];
