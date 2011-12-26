@@ -559,6 +559,9 @@ int main(int argc, const char * argv[]) {
                     exit(EXIT_FAILURE);
                 }
             }
+
+            GLint interval = 1;
+            [context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
         } else {
             // TODO - manually setup offline renderer format and context
         }
