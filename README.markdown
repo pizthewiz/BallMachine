@@ -7,6 +7,7 @@ a small command-line tool to load and run a Quartz Composer composition for Mac 
 - the composition input and output keys with minimum, maximum, default and current values (where applicable) can be printed via the --print-attributes switch
 - by default the composition is rendered off screen, but the --display switch can present the composition full screen on a given display. when the presentation mode is used, the canvas size argument is ignored and the display's native size is used. if no display unit number is provided, the main display will be used. when an unaccelerated display is selected, the float software renderer is used, otherwise a hardware renderer with [multisample anti-aliasing](http://en.wikipedia.org/wiki/Multisample_anti-aliasing).
 - the tool can be run in a 'gui' mode which renders off screen but provides a connection to the window server, which some plug-ins may require
+- while in presentation mode, the cursor is hidden, idle sleep is disabled for all displays and the window level is set to hide alerts. the application can be quit with command-q or changed via the application switcher.
 
 ### EXAMPLE
     % ballmachine ~/ProjectX/MoviePlayer.qtz --canvas-size 1920x1080 --max-framerate 60 --inputs "'{\"Movie_Source\": \"http://trailers.apple.com/movies/paramount/adventuresoftintin/tintin-tlr1_r640s.mov\", \"Volume\": 0.333}'" --plugin-path ~/ProjectX/PlugIns
