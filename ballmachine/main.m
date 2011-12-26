@@ -666,7 +666,7 @@ int main(int argc, const char * argv[]) {
                 // the lion way to fullscreen gl http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html
                 NSRect displayRect = [screen frame];
                 window = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
-                [window setLevel:NSMainMenuWindowLevel+1];
+                [window setLevel:CGShieldingWindowLevel()];
                 [window setOpaque:YES];
                 [window setHidesOnDeactivate:YES];
 
