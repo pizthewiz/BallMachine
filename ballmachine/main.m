@@ -598,14 +598,19 @@ int main(int argc, const char * argv[]) {
         };
 
 
-        // SIGINT handler
-        dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, dispatch_get_global_queue(0, 0));
-        dispatch_source_set_event_handler(source, ^{
+        // signal handlers
+        void (^shutdown)(void) = ^(void) {
             teardown();
             exit(EXIT_SUCCESS);
-        });
-        dispatch_resume(source);
+        };
+        dispatch_source_t interruptSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, dispatch_get_global_queue(0, 0));
+        dispatch_source_set_event_handler(interruptSource, shutdown);
+        dispatch_resume(interruptSource);
         sigignore(SIGINT);
+        dispatch_source_t terminateSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, SIGTERM, 0, dispatch_get_global_queue(0, 0));
+        dispatch_source_set_event_handler(terminateSource, shutdown);
+        dispatch_resume(terminateSource);
+        sigignore(SIGTERM);
 
 
         // locked and loaded
