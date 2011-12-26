@@ -11,6 +11,8 @@
 #import <mach/mach_time.h>
 #import <OpenGL/CGLRenderers.h>
 #import <IOKit/graphics/IOGraphicsLib.h>
+#import <IOKit/pwr_mgt/IOPMLib.h>
+
 
 #ifdef DEBUG
     #define CCDebugLogSelector() NSLog(@"-[%@ %@]", /*NSStringFromClass([self class])*/self, NSStringFromSelector(_cmd))
@@ -28,6 +30,7 @@
 
 // NB - avoid the long arm of ARC
 NSWindow* window = nil;
+IOPMAssertionID assertionID = kIOPMNullAssertionID;
 
 @interface NSURL(CCAdditions)
 - (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
@@ -525,10 +528,6 @@ int main(int argc, const char * argv[]) {
                 NSOpenGLPixelFormatAttribute attributes[] = {
                     // NB - apparently QC and 3rd party plugins use a lot of 1.2 and 2.1 GL bits, so we cannot go 3.2
                     NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
-#ifdef OLDSCHOOL
-                    NSOpenGLPFAFullScreen,
-                    NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(displayID),
-#endif
                         NSOpenGLPFAAccelerated,
                         NSOpenGLPFANoRecovery,
                     NSOpenGLPFADoubleBuffer,
@@ -542,15 +541,12 @@ int main(int argc, const char * argv[]) {
                 context = [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
                 if (!context) {
                     CCErrorLog(@"ERROR - failed to create hardware rendering context with MSAA!");
+                    // TODO - try again without MSAA
                     exit(EXIT_FAILURE);
                 }
             } else {
                 NSOpenGLPixelFormatAttribute attributes[] = {
                     NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
-#ifdef OLDSCHOOL
-                    NSOpenGLPFAFullScreen,
-                    NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(displayID),
-#endif
                         NSOpenGLPFARendererID, kCGLRendererGenericFloatID,
                     NSOpenGLPFADoubleBuffer,
                     NSOpenGLPFADepthSize, 24,
@@ -577,7 +573,15 @@ int main(int argc, const char * argv[]) {
             }
             [renderSlave startRendering];
         };
-        void (^renderSlaveTeardown)(void) = ^(void) {
+        void (^teardown)(void) = ^(void) {
+            // revert display sleep override
+            if (assertionID != kIOPMNullAssertionID) {
+                IOReturn success = IOPMAssertionRelease(assertionID);
+                if (success != kIOReturnSuccess) {
+                    CCErrorLog(@"ERROR - failed to release dislay sleep override");
+                }
+            }
+
             [renderSlave teardown];
             renderSlave = nil;
         };
@@ -586,7 +590,7 @@ int main(int argc, const char * argv[]) {
         // SIGINT handler
         dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, dispatch_get_global_queue(0, 0));
         dispatch_source_set_event_handler(source, ^{
-            renderSlaveTeardown();
+            teardown();
             exit(EXIT_SUCCESS);
         });
         dispatch_resume(source);
@@ -619,7 +623,7 @@ int main(int argc, const char * argv[]) {
                 renderSlaveSetup();
             }];
             [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationWillTerminateNotification object:NSApp queue:nil usingBlock:^(NSNotification*notification) {
-                renderSlaveTeardown();
+                teardown();
             }];
 
             // setup a minimal application menu
@@ -635,9 +639,13 @@ int main(int argc, const char * argv[]) {
 
             // setup window for output
             if (!shouldUseOfflineRenderer) {
-#ifdef OLDSCHOOL
-                [context setFullScreen];
-#else
+                // override display sleep while presenting - wish it were per display
+                IOReturn success = IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep, kIOPMAssertionLevelOn, CFSTR("ballmachine QC presentation"), &assertionID);
+                if (success != kIOReturnSuccess) {
+                    CCErrorLog(@"ERROR - failed to disable display sleep");
+                    exit(EXIT_FAILURE);
+                }
+
                 NSScreen* screen = screenForDisplayID(displayID);
                 if (!screen) {
                     CCErrorLog(@"ERROR - failed to fetch screen for displayID");
@@ -664,7 +672,6 @@ int main(int argc, const char * argv[]) {
 
                 // hide the cursor when presenting
                 [NSCursor hide];
-#endif
             }
 
             [NSApp run];

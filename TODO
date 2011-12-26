@@ -18,7 +18,8 @@ NOW
 LATER
 [X] hide the cursor when presenting fullscreen
 [X] clean up resources in willTerminate / SIGINT
-[ ] somehow prevent display sleep when presenting
+[X] prevent display sleep when presenting
+[ ] check what happens to no display sleep assertion on forced sleep
 [X] print nice display names
 [ ] somehow calculate fps
 [ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
