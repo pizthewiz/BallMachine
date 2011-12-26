@@ -60,6 +60,8 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block;
 - (void)cancel;
 + (NSTimeInterval)now;
+- (void)performWhileLocked:(dispatch_block_t)block;
+- (void)_cancel;
 @end
 @implementation RenderTimer
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
@@ -79,17 +81,12 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
     return self;
 }
 - (void)dealloc {
-    [self cancel];
+    [self _cancel];
 }
 - (void)cancel {
-    dispatch_sync(_queue, ^{
-        dispatch_source_cancel(_timer);
-        dispatch_release(_timer);
-        _timer = NULL;
-
-        dispatch_release(_queue);
-        _queue = NULL;
-    });
+    [self performWhileLocked:^{
+        [self _cancel];
+    }];
 }
 // in nanoseconds
 + (NSTimeInterval)now {
@@ -103,6 +100,17 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
     t *= info.numer;
     t /= info.denom;
     return t;
+}
+- (void)performWhileLocked:(dispatch_block_t)block {
+    dispatch_sync(_queue, block);
+}
+- (void)_cancel {
+    dispatch_source_cancel(_timer);
+    dispatch_release(_timer);
+    _timer = NULL;
+
+    dispatch_release(_queue);
+    _queue = NULL;
 }
 @end
 

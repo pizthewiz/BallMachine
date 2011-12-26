@@ -13,13 +13,14 @@ NOW
 [X] provide switch to print available screens
 [X] provide ability to render composition directly on specified screen
 [X] sort out why a message gets logged to the console 'invalid drawable'
-[ ] sort out the error canceling the render timer
+[X] sort out the error canceling the render timer
 
 LATER
 [X] hide the cursor when presenting fullscreen
 [X] clean up resources in willTerminate / SIGINT
 [X] prevent display sleep when presenting
-[ ] check what happens to no display sleep assertion on forced sleep
+[X] check what happens to no display sleep assertion on forced sleep
+    assertion persists at wake
 [X] print nice display names
 [ ] somehow calculate fps
 [ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
