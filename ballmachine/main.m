@@ -585,6 +585,8 @@ int main(int argc, const char * argv[]) {
             [renderSlave startRendering];
         };
         void (^teardown)(void) = ^(void) {
+            [window orderOut:nil];
+
             // revert display sleep override
             if (assertionID != kIOPMNullAssertionID) {
                 IOReturn success = IOPMAssertionRelease(assertionID);
