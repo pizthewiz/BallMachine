@@ -632,7 +632,7 @@ int main(int argc, const char * argv[]) {
             [NSApp run];
 #endif
         } else {
-            // go GUI, cheers to http://cocoawithlove.com/2010/09/minimalist-cocoa-programming.html
+            // setup as minimal cocoa app, greets to http://cocoawithlove.com/2010/09/minimalist-cocoa-programming.html
             [[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyRegular];
 
             [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:NSApp queue:nil usingBlock:^(NSNotification*notification) {
@@ -673,7 +673,6 @@ int main(int argc, const char * argv[]) {
                 window = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
                 [window setLevel:CGShieldingWindowLevel()];
                 [window setOpaque:YES];
-                [window setHidesOnDeactivate:YES];
 
                 NSRect viewRect = NSMakeRect(0.0, 0.0, displayRect.size.width, displayRect.size.height);
                 NSOpenGLView* view = [[NSOpenGLView alloc] initWithFrame:viewRect pixelFormat:format];
