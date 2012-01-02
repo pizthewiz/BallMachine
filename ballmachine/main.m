@@ -3,7 +3,7 @@
 //  ballmachine
 //
 //  Created by Jean-Pierre Mouilleseaux on 28 Oct 2011.
-//  Copyright (c) 2011 Chorded Constructions. All rights reserved.
+//  Copyright (c) 2011-2012 Chorded Constructions. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -12,6 +12,7 @@
 #import <OpenGL/CGLRenderers.h>
 #import <IOKit/graphics/IOGraphicsLib.h>
 #import <IOKit/pwr_mgt/IOPMLib.h>
+#import <CoreVideo/CoreVideo.h>
 
 
 #ifdef DEBUG
@@ -30,8 +31,10 @@
 
 // NB - avoid the long arm of ARC
 NSWindow* window = nil;
+// global
 IOPMAssertionID assertionID = kIOPMNullAssertionID;
 
+// TODO - migrate to AFO version
 @interface NSURL(CCAdditions)
 - (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
 @end
@@ -118,7 +121,9 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 #define CANVAS_WIDTH_OFFLINE_DEFAULT 1280.
 #define CANVAS_HEIGHT_OFFLINE_DEFAULT 720.
 
-@interface RenderSlave : NSObject
+@interface RenderSlave : NSObject {
+    CVDisplayLinkRef _displayLink;
+}
 @property (nonatomic) CGFloat maximumFramerate;
 @property (nonatomic) NSSize canvasSize;
 @property (nonatomic, strong) QCRenderer* renderer;
@@ -126,25 +131,33 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 @property (nonatomic) NSTimeInterval startTime;
 @property (nonatomic, strong) NSOpenGLContext* context;
 @property (nonatomic, strong) NSOpenGLPixelFormat* pixelFormat;
+@property (nonatomic) CGDirectDisplayID display;
 @property (nonatomic, getter=isRendering) BOOL rendering;
-- (id)initWithContext:(NSOpenGLContext*)context pixelFormat:(NSOpenGLPixelFormat*)pixelFormat composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
+- (id)initWithContext:(NSOpenGLContext*)context pixelFormat:(NSOpenGLPixelFormat*)pixelFormat display:(CGDirectDisplayID)display composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
 - (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs;
 - (void)printCompositionAttributes;
 - (void)startRendering;
 - (void)stopRendering;
 - (void)teardown;
 - (void)_render;
+- (CVReturn)_displayLinkRender:(const CVTimeStamp*)timeStamp;
 - (NSString*)_portDescriptionForKey:(NSString*)key;
 @end
 
+CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* inNow, const CVTimeStamp* inOutputTime, CVOptionFlags flagsIn, CVOptionFlags* flagsOut, void* displayLinkContext);
+CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* inNow, const CVTimeStamp* inOutputTime, CVOptionFlags flagsIn, CVOptionFlags* flagsOut, void* displayLinkContext) {
+	return [(__bridge RenderSlave*)displayLinkContext _displayLinkRender:inOutputTime];
+}
+
 @implementation RenderSlave
 
-@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime, context, pixelFormat, rendering;
+@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime, context, display, pixelFormat, rendering;
 
-- (id)initWithContext:(NSOpenGLContext*)ctx pixelFormat:(NSOpenGLPixelFormat*)format composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
+- (id)initWithContext:(NSOpenGLContext*)ctx pixelFormat:(NSOpenGLPixelFormat*)format display:(CGDirectDisplayID)disp composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
     self = [super init];
     if (self) {
         self.context = ctx;
+        self.display = disp;
         self.pixelFormat = format;
         self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_OFFLINE_DEFAULT;
         self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_OFFLINE_DEFAULT, CANVAS_HEIGHT_OFFLINE_DEFAULT);
@@ -170,8 +183,10 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 
     // online render
     if (self.context) {
-        // TODO - the colorspace should come from the display
+        // TODO - the colorspace should come from the display?
+//        CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
         self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
+//        CGColorSpaceRelease(colorSpace);
         if (!self.renderer) {
             CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
             exit(EXIT_FAILURE);
@@ -228,9 +243,30 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
     }
 
     self.rendering = YES;
-    self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./self.maximumFramerate) do:^{
-        [self _render];
-    }];
+    if (self.context) {
+        CVDisplayLinkRelease(_displayLink);
+
+        // setup display link
+        CVReturn error = CVDisplayLinkCreateWithCGDisplay(self.display, &_displayLink);
+        if (error) {
+            CCErrorLog(@"ERROR - failed to create display link with error %d", error);
+            _displayLink = NULL;
+            exit(EXIT_FAILURE);
+        }
+        error = CVDisplayLinkSetOutputCallback(_displayLink, DisplayLinkCallback, (__bridge void*)self);
+        if (error) {
+            CCErrorLog(@"ERROR - failed to link display link to callback with error %d", error);
+            _displayLink = NULL;
+            exit(EXIT_FAILURE);
+        }
+
+        // start it
+        CVDisplayLinkStart(_displayLink);
+    } else {        
+        self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./self.maximumFramerate) do:^{
+            [self _render];
+        }];
+    }
 }
 
 - (void)stopRendering {
@@ -238,6 +274,12 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 
     if (!self.isRendering)
         return;
+
+    if (_displayLink) {
+        CVDisplayLinkStop(_displayLink);
+        CVDisplayLinkRelease(_displayLink);
+        _displayLink = NULL;
+    }
 
     self.rendering = NO;
     self.renderTimer = nil;
@@ -277,6 +319,11 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
             CGLUnlockContext([self.context CGLContextObj]);            
         }
     }
+}
+
+- (CVReturn)_displayLinkRender:(const CVTimeStamp*)timeStamp {
+    [self _render];
+    return kCVReturnSuccess;
 }
 
 - (NSString*)_portDescriptionForKey:(NSString*)key {
@@ -513,7 +560,7 @@ int main(int argc, const char * argv[]) {
         }
 
         // display
-        CGDirectDisplayID displayID;
+        CGDirectDisplayID displayID = 0;
         NSOpenGLPixelFormat* format;
         NSOpenGLContext* context;
         if (!shouldUseOfflineRenderer) {
@@ -577,7 +624,7 @@ int main(int argc, const char * argv[]) {
 
         __block RenderSlave* renderSlave;
         void (^renderSlaveSetup)(void) = ^(void) {
-            renderSlave = [[RenderSlave alloc] initWithContext:context pixelFormat:format composition:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
+            renderSlave = [[RenderSlave alloc] initWithContext:context pixelFormat:format display:displayID composition:compositionLocation maximumFramerate:framerate canvasSize:size inputPairs:inputs];
             if (shouldPrintAttributes) {
                 [renderSlave printCompositionAttributes];
                 exit(EXIT_SUCCESS);

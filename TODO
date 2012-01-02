@@ -14,6 +14,7 @@ NOW
 [X] provide ability to render composition directly on specified screen
 [X] sort out why a message gets logged to the console 'invalid drawable'
 [X] sort out the error canceling the render timer
+[ ] fix bad main runloop issue
 
 LATER
 [X] hide the cursor when presenting fullscreen
@@ -23,7 +24,7 @@ LATER
     assertion persists at wake
 [X] print nice display names
 [ ] somehow calculate fps
-[ ] use a CVDisplayLink when rendering to a screen and framerate is not provided
+[X] use a CVDisplayLink when rendering to a screen and framerate is not provided
 [ ] fetch display's native refresh rate when max framerate >=, use CVDisplayLink
 [ ] respect canvas size switch for online rendering
 [ ] consider setting up offline context manually to enable MSAA
