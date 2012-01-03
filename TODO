@@ -14,6 +14,7 @@ NOW
 [X] provide ability to render composition directly on specified screen
 [X] sort out why a message gets logged to the console 'invalid drawable'
 [X] sort out the error canceling the render timer
+[ ] create QCRenderer from the render thread to satisfy Q&A 1538 http://developer.apple.com/library/mac/#qa/qa1538/_index.html
 [ ] fix bad main runloop issue
 
 LATER
@@ -25,8 +26,9 @@ LATER
 [X] print nice display names
 [ ] somehow calculate fps
 [X] use a CVDisplayLink when rendering to a screen and framerate is not provided
-[ ] fetch display's native refresh rate when max framerate >=, use CVDisplayLink
 [ ] respect canvas size switch for online rendering
+[ ] respect max framerate for online rendering
+[ ] fetch display's native refresh rate when max framerate >=, use CVDisplayLink
 [ ] consider setting up offline context manually to enable MSAA
 [ ] add switch to accept JSON settings file
 [ ] look into a pure processing -[QCRenderer initWithComposition:colorSpace:]
