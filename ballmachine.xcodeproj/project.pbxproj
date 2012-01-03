@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		D81F401714A420A500675DF3 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D81F401614A420A500675DF3 /* OpenGL.framework */; };
 		D81F401F14A4875D00675DF3 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D81F401E14A4875D00675DF3 /* IOKit.framework */; };
+		D89336EE14B2C45800F4D604 /* NSURL+CCExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = D89336ED14B2C45800F4D604 /* NSURL+CCExtensions.m */; };
 		D8BA48D8145B3DC300110BAC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8BA48D7145B3DC300110BAC /* Foundation.framework */; };
 		D8BA48DB145B3DC300110BAC /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D8BA48DA145B3DC300110BAC /* main.m */; };
 		D8BA48DF145B3DC300110BAC /* ballmachine.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D8BA48DE145B3DC300110BAC /* ballmachine.1 */; };
@@ -33,6 +34,8 @@
 /* Begin PBXFileReference section */
 		D81F401614A420A500675DF3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		D81F401E14A4875D00675DF3 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		D89336EC14B2C45800F4D604 /* NSURL+CCExtensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSURL+CCExtensions.h"; sourceTree = "<group>"; };
+		D89336ED14B2C45800F4D604 /* NSURL+CCExtensions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSURL+CCExtensions.m"; sourceTree = "<group>"; };
 		D8BA48D3145B3DC300110BAC /* ballmachine */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ballmachine; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8BA48D7145B3DC300110BAC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		D8BA48DA145B3DC300110BAC /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -96,6 +99,8 @@
 		D8BA48D9145B3DC300110BAC /* ballmachine */ = {
 			isa = PBXGroup;
 			children = (
+				D89336EC14B2C45800F4D604 /* NSURL+CCExtensions.h */,
+				D89336ED14B2C45800F4D604 /* NSURL+CCExtensions.m */,
 				D8BA48DA145B3DC300110BAC /* main.m */,
 				D8BA48DE145B3DC300110BAC /* ballmachine.1 */,
 				D8BA48DC145B3DC300110BAC /* Supporting Files */,
@@ -166,6 +171,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D8BA48DB145B3DC300110BAC /* main.m in Sources */,
+				D89336EE14B2C45800F4D604 /* NSURL+CCExtensions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

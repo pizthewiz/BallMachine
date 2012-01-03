@@ -13,6 +13,7 @@
 #import <IOKit/graphics/IOGraphicsLib.h>
 #import <IOKit/pwr_mgt/IOPMLib.h>
 #import <CoreVideo/CoreVideo.h>
+#import "NSURL+CCExtensions.h"
 
 
 #ifdef DEBUG
@@ -33,25 +34,6 @@
 NSWindow* window = nil;
 // global
 IOPMAssertionID assertionID = kIOPMNullAssertionID;
-
-// TODO - migrate to AFO version
-@interface NSURL(CCAdditions)
-- (id)initFileURLWithPossiblyRelativePath:(NSString*)path isDirectory:(BOOL)isDir;
-@end
-@implementation NSURL(CCAdditions)
-- (id)initFileURLWithPossiblyRelativePath:(NSString*)filePath isDirectory:(BOOL)isDir {
-    if ([filePath hasPrefix:@"../"] || [filePath hasPrefix:@"./"]) {
-        NSString* currentDirectoryPath = [[NSFileManager defaultManager] currentDirectoryPath];
-        filePath = [currentDirectoryPath stringByAppendingPathComponent:[filePath stringByStandardizingPath]];
-    }
-    filePath = [filePath stringByStandardizingPath];
-
-    self = [self initFileURLWithPath:filePath isDirectory:isDir];
-    if (self) {
-    }
-    return self;
-}
-@end
 
 // based on a combo of watchdog timer and MABGTimer
 //  http://www.fieryrobot.com/blog/2010/07/10/a-watchdog-timer-in-gcd/
@@ -486,7 +468,7 @@ int main(int argc, const char * argv[]) {
         }
 
         NSString* compositionFilePath = [NSString stringWithUTF8String:argv[1]];
-        NSURL* compositionLocation = [[NSURL alloc] initFileURLWithPossiblyRelativePath:compositionFilePath isDirectory:NO];
+        NSURL* compositionLocation = [[NSURL alloc] initFileURLWithPossiblyRelativeString:compositionFilePath relativeTo:[[NSFileManager defaultManager] currentDirectoryPath] isDirectory:NO];
         // double check
         if (![compositionLocation isFileURL]) {
             CCErrorLog(@"ERROR - filed to create URL for path '%@'", compositionFilePath);
@@ -529,7 +511,7 @@ int main(int argc, const char * argv[]) {
         // extra plug-in folder
         NSString* plugInFolderPath = [args stringForKey:@"-plugin-path"];
         if (plugInFolderPath) {
-            NSURL* plugInFolderLocation = [[NSURL alloc] initFileURLWithPossiblyRelativePath:plugInFolderPath isDirectory:NO];
+            NSURL* plugInFolderLocation = [[NSURL alloc] initFileURLWithPossiblyRelativeString:plugInFolderPath relativeTo:[[NSFileManager defaultManager] currentDirectoryPath] isDirectory:NO];
             // double check
             if (![plugInFolderLocation isFileURL]) {
                 CCErrorLog(@"ERROR - filed to create URL for path '%@'", plugInFolderPath);
