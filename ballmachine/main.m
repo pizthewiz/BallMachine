@@ -183,10 +183,9 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
     // online render
     if (self.context) {
-        // TODO - the colorspace should come from the display?
-//        CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
+        CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
         self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
-//        CGColorSpaceRelease(colorSpace);
+        CGColorSpaceRelease(colorSpace);
         if (!self.renderer) {
             CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
             exit(EXIT_FAILURE);
