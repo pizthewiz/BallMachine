@@ -166,22 +166,26 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 }
 
 - (void)printCompositionAttributes {
+    // HACK - get renderer setup for value inspection
+    if (!self.renderer)
+        [self _setup];
+
     printf("INPUT KEYS\n");
     if (self.composition.inputKeys.count > 0) {
         [self.composition.inputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
-            printf("\t%s\n", [[self _portDescriptionForKey:key] UTF8String]);
+            printf("  %s\n", [[self _portDescriptionForKey:key] UTF8String]);
         }];
     } else {
-        printf("\t--NONE--\n");
+        printf("  --NONE--\n");
     }
 
     printf("OUTPUT KEYS\n");
     if (self.composition.outputKeys.count > 0) {
         [self.composition.outputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
-            printf("\t%s\n", [[self _portDescriptionForKey:key] UTF8String]);
+            printf("  %s\n", [[self _portDescriptionForKey:key] UTF8String]);
         }];
     } else {
-        printf("\t--NONE--\n");
+        printf("  --NONE--\n");
     }
 
 //    NSLog(@"%@", self.renderer.attributes);
