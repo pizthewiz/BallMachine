@@ -52,9 +52,13 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
     self = [super init];
     if (self) {
-//        _queue = dispatch_queue_create("com.chordedconstructions.fleshworld.ballmachine", NULL);
+#define RENDER_ON_MAIN_QUEUE 0
+#if !RENDER_ON_MAIN_QUEUE
+        _queue = dispatch_queue_create("com.chordedconstructions.fleshworld.ballmachine", NULL);
+#else
         _queue = dispatch_get_main_queue();
         dispatch_retain(_queue);
+#endif
         _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _queue);
         // NB - this fires after interval, not immediately
         dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval * NSEC_PER_SEC, 0);
@@ -200,11 +204,15 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     }
 
     self.rendering = YES;
-    // NB - display link disabled for now
-    if (NO && self.display != 0) {
+#define USE_DISPLAY_LINK 1
+#if USE_DISPLAY_LINK
+    // display link timer
+    if (self.display != 0) {
+#else
+    if (NO) {
+#endif
         CVDisplayLinkRelease(_displayLink);
 
-        // setup display link
         CVReturn error = CVDisplayLinkCreateWithCGDisplay(self.display, &_displayLink);
         if (error) {
             CCErrorLog(@"ERROR - failed to create display link with error %d", error);
@@ -220,7 +228,9 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
         // start it
         CVDisplayLinkStart(_displayLink);
-    } else {
+    }
+    // gcd timer
+    else {
         self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./self.maximumFramerate) do:^{
             [self _render];
         }];
@@ -259,9 +269,8 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 - (void)_setup {
     CCDebugLogSelector();
 
-    // display link
-    // NB - disabled for now as it can quickly bog down the rendering, almost too high a framerate
-    if (NO && self.display != 0) {
+    // online renderer
+    if (self.display != 0) {
         CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
         self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:self.composition];
         CGColorSpaceRelease(colorSpace);
@@ -270,7 +279,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
             exit(EXIT_FAILURE);
         }
     }
-    // GCD timer
+    // offline renderer
     else {
         self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:self.composition];
         if (!self.renderer) {
@@ -328,9 +337,13 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 }
 
 - (CVReturn)_displayLinkRender:(const CVTimeStamp*)timeStamp {
+#if RENDER_ON_MAIN_QUEUE
     dispatch_async(dispatch_get_main_queue(), ^{
+#endif
         [self _render];
+#if RENDER_ON_MAIN_QUEUE
     });
+#endif
     return kCVReturnSuccess;
 }
 
