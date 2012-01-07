@@ -52,7 +52,9 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 - (id)initWithInterval:(NSTimeInterval)interval do:(void (^)(void))block {
     self = [super init];
     if (self) {
-        _queue = dispatch_queue_create("com.chordedconstructions.fleshworld.ballmachine", NULL);
+//        _queue = dispatch_queue_create("com.chordedconstructions.fleshworld.ballmachine", NULL);
+        _queue = dispatch_get_main_queue();
+        dispatch_retain(_queue);
         _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _queue);
         // NB - this fires after interval, not immediately
         dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), interval * NSEC_PER_SEC, 0);
@@ -285,11 +287,13 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 - (void)_render {
 //    CCDebugLogSelector();
 
-    // setup the QCRenderer on the proper thread to satisfy Q&A 1538
+    // setup the QCRenderer on the render thread/queue to satisfy Q&A 1538
     //  http://developer.apple.com/library/mac/#qa/qa1538/_index.html
     if (!self.renderer) {
 //        CCDebugLog(@"currentRunLoop mode: %@", [[NSRunLoop currentRunLoop] currentMode]);
 //        CCDebugLog(@"mainRunLoop mode: %@", [[NSRunLoop mainRunLoop] currentMode]);
+//        CCDebugLog(@"current thread: %@", [NSThread currentThread]);
+//        CCDebugLog(@"main thread: %@", [NSThread mainThread]);
 
         [self _setup];
         return;
@@ -318,7 +322,9 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 }
 
 - (CVReturn)_displayLinkRender:(const CVTimeStamp*)timeStamp {
-    [self _render];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self _render];
+    });
     return kCVReturnSuccess;
 }
 

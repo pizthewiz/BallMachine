@@ -15,7 +15,7 @@ NOW
 [X] sort out why a message gets logged to the console 'invalid drawable'
 [X] sort out the error canceling the render timer
 [X] create QCRenderer from the render thread to satisfy Q&A 1538 http://developer.apple.com/library/mac/#qa/qa1538/_index.html
-[ ] fix bad main runloop issue
+[ ] sort out render thread runloop issues
 [ ] determine offline vs online by display == 0
 
 LATER
