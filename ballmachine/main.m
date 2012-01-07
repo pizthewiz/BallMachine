@@ -117,7 +117,7 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 @property (nonatomic) CGDirectDisplayID display;
 @property (nonatomic) CGFloat maximumFramerate;
 @property (nonatomic) NSSize canvasSize;
-@property (nonatomic, strong) NSURL* compositionLocation;
+@property (nonatomic, strong) QCComposition* composition;
 @property (nonatomic, strong) NSDictionary* compositionInputs;
 - (id)initWithContext:(NSOpenGLContext*)context pixelFormat:(NSOpenGLPixelFormat*)pixelFormat display:(CGDirectDisplayID)display composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
 - (void)printCompositionAttributes;
@@ -137,7 +137,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
 @implementation RenderSlave
 
-@synthesize renderer, rendering, renderTimer, startTime, context, display, pixelFormat, maximumFramerate, canvasSize, compositionLocation, compositionInputs;
+@synthesize renderer, rendering, renderTimer, startTime, context, display, pixelFormat, maximumFramerate, canvasSize, composition, compositionInputs;
 
 - (id)initWithContext:(NSOpenGLContext*)ctx pixelFormat:(NSOpenGLPixelFormat*)format display:(CGDirectDisplayID)disp composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
     self = [super init];
@@ -147,8 +147,14 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
         self.pixelFormat = format;
         self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_OFFLINE_DEFAULT;
         self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_OFFLINE_DEFAULT, CANVAS_HEIGHT_OFFLINE_DEFAULT);
-        self.compositionLocation = location;
         self.compositionInputs = inputs;
+
+        QCComposition* comp = [QCComposition compositionWithFile:[location path]];
+        if (!comp) {
+            CCErrorLog(@"ERROR - failed to create composition from path '%@'", location);
+            exit(EXIT_FAILURE);
+        }
+        self.composition = comp;
     }
     return self;
 }
@@ -161,8 +167,8 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
 - (void)printCompositionAttributes {
     printf("INPUT KEYS\n");
-    if (self.renderer.inputKeys.count > 0) {
-        [self.renderer.inputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
+    if (self.composition.inputKeys.count > 0) {
+        [self.composition.inputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
             printf("\t%s\n", [[self _portDescriptionForKey:key] UTF8String]);
         }];
     } else {
@@ -170,8 +176,8 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     }
 
     printf("OUTPUT KEYS\n");
-    if (self.renderer.outputKeys.count > 0) {
-        [self.renderer.outputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
+    if (self.composition.outputKeys.count > 0) {
+        [self.composition.outputKeys enumerateObjectsUsingBlock:^(NSString* key, NSUInteger idx, BOOL *stop) {
             printf("\t%s\n", [[self _portDescriptionForKey:key] UTF8String]);
         }];
     } else {
@@ -248,16 +254,10 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 - (void)_setup {
     CCDebugLogSelector();
 
-    QCComposition* composition = [QCComposition compositionWithFile:self.compositionLocation.path];
-    if (!composition) {
-        CCErrorLog(@"ERROR - failed to create composition from path '%@'", self.compositionLocation.path);
-        exit(EXIT_FAILURE);
-    }
-
     // online render
     if (self.display != 0) {
         CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
-        self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
+        self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:self.composition];
         CGColorSpaceRelease(colorSpace);
         if (!self.renderer) {
             CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
@@ -266,7 +266,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     }
     // offline render
     else {
-        self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:composition];
+        self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:self.composition];
         if (!self.renderer) {
             CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
             exit(EXIT_FAILURE);
@@ -275,7 +275,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
     // set inputs
     [self.compositionInputs enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
-        if (![[self.renderer inputKeys] containsObject:key]) {
+        if (![self.composition.inputKeys containsObject:key]) {
             CCDebugLog(@"provided input key '%@' not found in composition and has been ignored...", key);
             return;
         }
