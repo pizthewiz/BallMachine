@@ -200,7 +200,8 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     }
 
     self.rendering = YES;
-    if (self.display != 0) {
+    // NB - display link disabled for now
+    if (NO && self.display != 0) {
         CVDisplayLinkRelease(_displayLink);
 
         // setup display link
