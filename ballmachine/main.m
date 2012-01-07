@@ -190,7 +190,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     }
 
     self.rendering = YES;
-    if (self.context) {
+    if (self.display != 0) {
         CVDisplayLinkRelease(_displayLink);
 
         // setup display link
@@ -255,7 +255,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     }
 
     // online render
-    if (self.context) {
+    if (self.display != 0) {
         CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
         self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
         CGColorSpaceRelease(colorSpace);
