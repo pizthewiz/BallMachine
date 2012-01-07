@@ -14,8 +14,9 @@ NOW
 [X] provide ability to render composition directly on specified screen
 [X] sort out why a message gets logged to the console 'invalid drawable'
 [X] sort out the error canceling the render timer
-[ ] create QCRenderer from the render thread to satisfy Q&A 1538 http://developer.apple.com/library/mac/#qa/qa1538/_index.html
+[X] create QCRenderer from the render thread to satisfy Q&A 1538 http://developer.apple.com/library/mac/#qa/qa1538/_index.html
 [ ] fix bad main runloop issue
+[ ] determine offline vs online by display == 0
 
 LATER
 [X] hide the cursor when presenting fullscreen

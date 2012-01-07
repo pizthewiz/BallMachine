@@ -106,21 +106,23 @@ IOPMAssertionID assertionID = kIOPMNullAssertionID;
 @interface RenderSlave : NSObject {
     CVDisplayLinkRef _displayLink;
 }
-@property (nonatomic) CGFloat maximumFramerate;
-@property (nonatomic) NSSize canvasSize;
 @property (nonatomic, strong) QCRenderer* renderer;
+@property (nonatomic, getter=isRendering) BOOL rendering;
 @property (nonatomic, strong) RenderTimer* renderTimer;
 @property (nonatomic) NSTimeInterval startTime;
 @property (nonatomic, strong) NSOpenGLContext* context;
 @property (nonatomic, strong) NSOpenGLPixelFormat* pixelFormat;
 @property (nonatomic) CGDirectDisplayID display;
-@property (nonatomic, getter=isRendering) BOOL rendering;
+@property (nonatomic) CGFloat maximumFramerate;
+@property (nonatomic) NSSize canvasSize;
+@property (nonatomic, strong) NSURL* compositionLocation;
+@property (nonatomic, strong) NSDictionary* compositionInputs;
 - (id)initWithContext:(NSOpenGLContext*)context pixelFormat:(NSOpenGLPixelFormat*)pixelFormat display:(CGDirectDisplayID)display composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs;
-- (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs;
 - (void)printCompositionAttributes;
 - (void)startRendering;
 - (void)stopRendering;
 - (void)teardown;
+- (void)_setup;
 - (void)_render;
 - (CVReturn)_displayLinkRender:(const CVTimeStamp*)timeStamp;
 - (NSString*)_portDescriptionForKey:(NSString*)key;
@@ -133,7 +135,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
 @implementation RenderSlave
 
-@synthesize maximumFramerate, canvasSize, renderer, renderTimer, startTime, context, display, pixelFormat, rendering;
+@synthesize renderer, rendering, renderTimer, startTime, context, display, pixelFormat, maximumFramerate, canvasSize, compositionLocation, compositionInputs;
 
 - (id)initWithContext:(NSOpenGLContext*)ctx pixelFormat:(NSOpenGLPixelFormat*)format display:(CGDirectDisplayID)disp composition:(NSURL*)location maximumFramerate:(CGFloat)framerate canvasSize:(NSSize)size inputPairs:(NSDictionary*)inputs {
     self = [super init];
@@ -143,7 +145,8 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
         self.pixelFormat = format;
         self.maximumFramerate = framerate ? framerate : MAX_FRAMERATE_OFFLINE_DEFAULT;
         self.canvasSize = !NSEqualSizes(size, NSZeroSize) ? size : NSMakeSize(CANVAS_WIDTH_OFFLINE_DEFAULT, CANVAS_HEIGHT_OFFLINE_DEFAULT);
-        [self loadCompositionAtURL:location withInputPairs:inputs];
+        self.compositionLocation = location;
+        self.compositionInputs = inputs;
     }
     return self;
 }
@@ -152,45 +155,6 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     CCDebugLogSelector();
 
     [self teardown];
-}
-
-- (void)loadCompositionAtURL:(NSURL*)location withInputPairs:(NSDictionary*)inputs {
-    CCDebugLogSelector();
-
-    QCComposition* composition = [QCComposition compositionWithFile:location.path];
-    if (!composition) {
-        CCErrorLog(@"ERROR - failed to create composition from path '%@'", location.path);
-        exit(EXIT_FAILURE);
-    }
-
-    // online render
-    if (self.context) {
-        CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
-        self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
-        CGColorSpaceRelease(colorSpace);
-        if (!self.renderer) {
-            CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
-            exit(EXIT_FAILURE);
-        }
-    }
-    // offline render
-    else {
-        self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:composition];
-        if (!self.renderer) {
-            CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    // set inputs
-    [inputs enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
-        if (![[self.renderer inputKeys] containsObject:key]) {
-            CCDebugLog(@"provided input key '%@' not found in composition and has been ignored...", key);
-            return;
-        }
-
-        [self.renderer setValue:obj forInputKey:key];
-    }];
 }
 
 - (void)printCompositionAttributes {
@@ -243,7 +207,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
         // start it
         CVDisplayLinkStart(_displayLink);
-    } else {        
+    } else {
         self.renderTimer = [[RenderTimer alloc] initWithInterval:(1./self.maximumFramerate) do:^{
             [self _render];
         }];
@@ -277,8 +241,59 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
     self.context = nil;
 }
 
+#pragma mark -
+
+- (void)_setup {
+    CCDebugLogSelector();
+
+    QCComposition* composition = [QCComposition compositionWithFile:self.compositionLocation.path];
+    if (!composition) {
+        CCErrorLog(@"ERROR - failed to create composition from path '%@'", self.compositionLocation.path);
+        exit(EXIT_FAILURE);
+    }
+
+    // online render
+    if (self.context) {
+        CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
+        self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:composition];
+        CGColorSpaceRelease(colorSpace);
+        if (!self.renderer) {
+            CCErrorLog(@"ERROR - failed to create online renderer for composition %@", composition);
+            exit(EXIT_FAILURE);
+        }
+    }
+    // offline render
+    else {
+        self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:composition];
+        if (!self.renderer) {
+            CCErrorLog(@"ERROR - failed to create renderer for composition %@", composition);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // set inputs
+    [self.compositionInputs enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if (![[self.renderer inputKeys] containsObject:key]) {
+            CCDebugLog(@"provided input key '%@' not found in composition and has been ignored...", key);
+            return;
+        }
+
+        [self.renderer setValue:obj forInputKey:key];
+    }];
+}
+
 - (void)_render {
 //    CCDebugLogSelector();
+
+    // setup the QCRenderer on the proper thread to satisfy Q&A 1538
+    //  http://developer.apple.com/library/mac/#qa/qa1538/_index.html
+    if (!self.renderer) {
+//        CCDebugLog(@"currentRunLoop mode: %@", [[NSRunLoop currentRunLoop] currentMode]);
+//        CCDebugLog(@"mainRunLoop mode: %@", [[NSRunLoop mainRunLoop] currentMode]);
+
+        [self _setup];
+        return;
+    }
 
     NSTimeInterval now = [RenderTimer now] / NSEC_PER_SEC;
     if (!self.startTime)
@@ -297,7 +312,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
         if (self.context) {
             [self.context flushBuffer];
-            CGLUnlockContext([self.context CGLContextObj]);            
+            CGLUnlockContext([self.context CGLContextObj]);
         }
     }
 }
