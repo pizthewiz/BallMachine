@@ -258,8 +258,9 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 - (void)_setup {
     CCDebugLogSelector();
 
-    // online render
-    if (self.display != 0) {
+    // display link
+    // NB - disabled for now as it can quickly bog down the rendering, almost too high a framerate
+    if (NO && self.display != 0) {
         CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(self.display);
         self.renderer = [[QCRenderer alloc] initWithCGLContext:[self.context CGLContextObj] pixelFormat:[self.pixelFormat CGLPixelFormatObj] colorSpace:NULL composition:self.composition];
         CGColorSpaceRelease(colorSpace);
@@ -268,7 +269,7 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
             exit(EXIT_FAILURE);
         }
     }
-    // offline render
+    // GCD timer
     else {
         self.renderer = [[QCRenderer alloc] initOffScreenWithSize:self.canvasSize colorSpace:NULL composition:self.composition];
         if (!self.renderer) {
