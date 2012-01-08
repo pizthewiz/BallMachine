@@ -10,7 +10,12 @@ a small command-line tool to load and run a Quartz Composer composition for Mac 
 - while in presentation mode, the cursor is hidden, idle sleep is disabled for all displays and the window level is set to hide alerts. the application can be quit with command-q or changed via the application switcher.
 
 ### EXAMPLE
-    % ballmachine ~/ProjectX/MoviePlayer.qtz --canvas-size 1920x1080 --max-framerate 60 --inputs "'{\"Movie_Source\": \"http://trailers.apple.com/movies/paramount/adventuresoftintin/tintin-tlr1_r640s.mov\", \"Volume\": 0.333}'" --plugin-path ~/ProjectX/PlugIns
+to render directly to a display:
+
+    % ballmachine ~/ProjectX/MoviePlayer.qtz --inputs "'{\"Movie_Source\": \"http://trailers.apple.com/movies/paramount/adventuresoftintin/tintin-tlr1_r640s.mov\", \"Volume\": 0.8}'" --plugin-path ~/ProjectX/PlugIns --display
+to render offline:
+
+    % ballmachine ~/ProjectY/ProcessToSyphon.qtz --canvas-size 1920x1080 --max-framerate 60 --inputs "'{\"Live_Image_Directory\": \"~/ProjectY/Images\", \"Debug\": 1}'" --plugin-path ~/ProjectY/PlugIns
 
 ### THANKS
 - Anton Marini (vade) for [Syphon](http://syphon.v002.info/), [QCPlayerPlus](http://sourceforge.net/projects/qcadvancedplaye/) and perpetual help, even when undeserved
