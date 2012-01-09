@@ -389,13 +389,13 @@ void printVersion(const char * argv[]) {
 NSString* nameForDisplayID(CGDirectDisplayID displayID);
 NSString* nameForDisplayID(CGDirectDisplayID displayID) {
     NSString* screenName;
-    
+
     NSDictionary* deviceInfo = (__bridge_transfer NSDictionary*)IODisplayCreateInfoDictionary(CGDisplayIOServicePort(displayID), kIODisplayOnlyPreferredName);
     NSDictionary* localizedNames = [deviceInfo objectForKey:[NSString stringWithUTF8String:kDisplayProductName]];
-    
+
     if ([localizedNames count] > 0)
         screenName = [localizedNames objectForKey:[[localizedNames allKeys] objectAtIndex:0]];
-    
+
     return screenName;
 }
 int printDisplays(void);
