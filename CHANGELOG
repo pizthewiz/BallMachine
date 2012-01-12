@@ -1,4 +1,9 @@
 
+v0.3.0 (11 Jan 2012)
+* introduce presentation mode to render composition fullscreen on a given display
+* add switch to print attached displays
+* include current port value on print attributes command
+
 v0.2.1 (13 Dec 2011)
 * add switch to print composition input and output port attributes
 * expose switch to run tool in a GUI mode with a window server connection
