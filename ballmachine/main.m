@@ -28,7 +28,7 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
-#define VERSION "v0.3.0-pre"
+#define VERSION "v0.3.0"
 
 // NB - avoid the long arm of ARC
 NSWindow* window = nil;
