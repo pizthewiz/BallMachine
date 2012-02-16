@@ -28,7 +28,8 @@
     #define CCErrorLog(a...) NSLog(a)
 #endif
 
-#define VERSION "v0.3.0"
+#define NAME "ballmachine"
+#define VERSION "v0.3.1-pre"
 
 // NB - avoid the long arm of ARC
 NSWindow* window = nil;
@@ -367,12 +368,11 @@ CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* in
 
 #pragma mark -
 
-void usage(const char * argv[]);
-void usage(const char * argv[]) {
-    NSString* name = [[NSString stringWithUTF8String:argv[0]] lastPathComponent];
-    printf("usage: %s <composition> [options]\n", [name UTF8String]);
+void usage(void);
+void usage(void) {
+    printf("usage: %s <composition> [options]\n", NAME);
     printf("\nOPTIONS:\n");
-    printf("  --version\t\tprint %s's version\n\n", [name UTF8String]);
+    printf("  --version\t\tprint %s's version\n\n", NAME);
     printf("  --print-attributes\tprint composition port details\n");
     printf("  --inputs=pairs\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
     printf("  --canvas-size=val\tset canvas size, E.g. '1920x1080'\n");
@@ -382,9 +382,9 @@ void usage(const char * argv[]) {
     printf("  --display=val\t\tset display unit number composition will be drawn to\n");
     printf("  --window-server\trun with a window server connection\n");
 }
-void printVersion(const char * argv[]);
-void printVersion(const char * argv[]) {
-    printf("%s %s\n", [[[NSString stringWithUTF8String:argv[0]] lastPathComponent] UTF8String], VERSION);
+void printVersion(void);
+void printVersion(void) {
+    printf("%s %s\n", NAME, VERSION);
 }
 NSString* nameForDisplayID(CGDirectDisplayID displayID);
 NSString* nameForDisplayID(CGDirectDisplayID displayID) {
@@ -494,7 +494,7 @@ int main(int argc, const char * argv[]) {
         }
 
         if (shouldPrintVersion) {
-            printVersion(argv);
+            printVersion();
             return 0;
         }
         if (shouldPrintDisplays) {
@@ -503,7 +503,7 @@ int main(int argc, const char * argv[]) {
 
         // source composition is required
         if (argc < 2) {
-            usage(argv);
+            usage();
             return 1;
         }
 
@@ -511,14 +511,14 @@ int main(int argc, const char * argv[]) {
         NSURL* compositionLocation = [[NSURL alloc] initFileURLWithPossiblyRelativeString:compositionFilePath relativeTo:[[NSFileManager defaultManager] currentDirectoryPath] isDirectory:NO];
         // double check
         if (![compositionLocation isFileURL]) {
-            CCErrorLog(@"ERROR - filed to create URL for path '%@'", compositionFilePath);
-            usage(argv);
+            CCErrorLog(@"ERROR - failed to create URL for path '%@'", compositionFilePath);
+            usage();
             return 1;
         }
         NSError* error;
         if (![compositionLocation checkResourceIsReachableAndReturnError:&error]) {
             CCErrorLog(@"ERROR - bad source composition URL: %@", [error localizedDescription]);
-            usage(argv);
+            usage();
             return 1;
         }
 
@@ -542,7 +542,7 @@ int main(int argc, const char * argv[]) {
             inputs = [NSJSONSerialization JSONObjectWithData:[inputValuesString dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers|NSJSONReadingMutableLeaves error:&error];
             if (error) {
                 CCErrorLog(@"ERROR - failed to deserialize JSON - %@", [error localizedDescription]);
-                usage(argv);
+                usage();
                 return 1;
             }
             CCDebugLog(@"inputs:%@", inputs);
