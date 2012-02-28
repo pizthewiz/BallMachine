@@ -19,6 +19,8 @@ NOW
     the render thread plainly doesn't have an active runloop, if this proves to be problematic the value of RENDER_ON_MAIN_QUEUE can move rendering over, though it comes at a performance penlty and can beachball the app with intensive compositions
 [ ] sort out how or if to throttle the display link
 [X] determine offline vs online by display == 0
+[ ] cursor can be seen over content when not the active app
+[ ] consider using proper fullscreen and not friendly maxi-window
 
 LATER
 [X] hide the cursor when presenting fullscreen
