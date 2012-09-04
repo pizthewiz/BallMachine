@@ -1,6 +1,6 @@
 
 # Ball Machine
-a small command-line tool to load and run a Quartz Composer composition for Mac OS X 10.7
+a small command-line tool to run a Quartz Composer composition for Mac OS X 10.7 and later
 
 ### GENERAL
 - the canvas size, max framerate and input key:value pairs (as heavily escaped JSON) can be defined through a command-line arguments
