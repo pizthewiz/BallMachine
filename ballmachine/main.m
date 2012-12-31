@@ -29,7 +29,7 @@
 #endif
 
 #define NAME "ballmachine"
-#define VERSION "v0.3.1-pre"
+#define VERSION "v0.3.1"
 
 // NB - avoid the long arm of ARC
 NSWindow* window = nil;
