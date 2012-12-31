@@ -41,9 +41,9 @@
 		D8BA48DA145B3DC300110BAC /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D8BA48DD145B3DC300110BAC /* ballmachine-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ballmachine-Prefix.pch"; sourceTree = "<group>"; };
 		D8BA48DE145B3DC300110BAC /* ballmachine.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = ballmachine.1; sourceTree = "<group>"; };
-		D8BA48E5145B3E2E00110BAC /* CHANGELOG */ = {isa = PBXFileReference; lastKnownFileType = text; path = CHANGELOG; sourceTree = SOURCE_ROOT; };
-		D8BA48E6145B3E2E00110BAC /* README.markdown */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.markdown; sourceTree = SOURCE_ROOT; };
-		D8BA48E7145B3E2E00110BAC /* TODO */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO; sourceTree = SOURCE_ROOT; };
+		D8BA48E5145B3E2E00110BAC /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = CHANGELOG.md; sourceTree = SOURCE_ROOT; };
+		D8BA48E6145B3E2E00110BAC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.md; sourceTree = SOURCE_ROOT; };
+		D8BA48E7145B3E2E00110BAC /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = TODO.md; sourceTree = SOURCE_ROOT; };
 		D8BA48E8145B441200110BAC /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		D8BA48F8145F283D00110BAC /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		D8BA48FA145F3E0A00110BAC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -104,9 +104,9 @@
 				D8BA48DA145B3DC300110BAC /* main.m */,
 				D8BA48DE145B3DC300110BAC /* ballmachine.1 */,
 				D8BA48DC145B3DC300110BAC /* Supporting Files */,
-				D8BA48E6145B3E2E00110BAC /* README.markdown */,
-				D8BA48E5145B3E2E00110BAC /* CHANGELOG */,
-				D8BA48E7145B3E2E00110BAC /* TODO */,
+				D8BA48E6145B3E2E00110BAC /* README.md */,
+				D8BA48E5145B3E2E00110BAC /* CHANGELOG.md */,
+				D8BA48E7145B3E2E00110BAC /* TODO.md */,
 			);
 			path = ballmachine;
 			sourceTree = "<group>";
