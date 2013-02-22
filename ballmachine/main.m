@@ -3,7 +3,7 @@
 //  ballmachine
 //
 //  Created by Jean-Pierre Mouilleseaux on 28 Oct 2011.
-//  Copyright (c) 2011-2012 Chorded Constructions. All rights reserved.
+//  Copyright (c) 2011-2013 Chorded Constructions. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -13,8 +13,8 @@
 #import <IOKit/graphics/IOGraphicsLib.h>
 #import <IOKit/pwr_mgt/IOPMLib.h>
 #import <CoreVideo/CoreVideo.h>
-#import "NSURL+CCExtensions.h"
 
+#import "NSURL+CCExtensions.h"
 
 #ifdef DEBUG
     #define CCDebugLogSelector() NSLog(@"-[%@ %@]", /*NSStringFromClass([self class])*/self, NSStringFromSelector(_cmd))
@@ -29,10 +29,10 @@
 #endif
 
 #define NAME "ballmachine"
-#define VERSION "v0.3.1"
+#define VERSION "v0.3.2-pre"
 
 // NB - avoid the long arm of ARC
-NSWindow* window = nil;
+static NSWindow* BMWindow = nil;
 // global
 IOPMAssertionID assertionID = kIOPMNullAssertionID;
 
@@ -372,15 +372,15 @@ void usage(void);
 void usage(void) {
     printf("usage: %s <composition> [options]\n", NAME);
     printf("\nOPTIONS:\n");
-    printf("  --version\t\tprint %s's version\n\n", NAME);
+    printf("  --version\t\t\t\tprint %s's version\n\n", NAME);
     printf("  --print-attributes\tprint composition port details\n");
-    printf("  --inputs=pairs\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
-    printf("  --canvas-size=val\tset canvas size, E.g. '1920x1080'\n");
-    printf("  --max-framerate=val\tset maximum rendering framerate\n\n");
-    printf("  --plugin-path=path\tadditional directory of plug-ins to load\n\n");
-    printf("  --print-displays\tprint descriptions for available displays\n");
-    printf("  --display=val\t\tset display unit number composition will be drawn to\n");
-    printf("  --window-server\trun with a window server connection\n");
+    printf("  --inputs [pairs]\t\tdefine input key-value pairs in JSON, ESCAPE LIKE MAD!\n\n");
+    printf("  --canvas-size [val]\tset canvas size, E.g. '1920x1080'\n");
+    printf("  --max-framerate [val]\tset maximum rendering framerate\n\n");
+    printf("  --plugin-path [path]\tadditional directory of plug-ins to load\n\n");
+    printf("  --print-displays\t\tprint descriptions for available displays\n");
+    printf("  --display [val]\t\tset display unit number composition will be drawn to\n");
+    printf("  --window-server\t\trun with a window server connection\n");
 }
 void printVersion(void);
 void printVersion(void) {
@@ -653,7 +653,7 @@ int main(int argc, const char * argv[]) {
             [renderSlave startRendering];
         };
         void (^teardown)(void) = ^(void) {
-            [window orderOut:nil];
+            [BMWindow orderOut:nil];
 
             // revert display sleep override
             if (assertionID != kIOPMNullAssertionID) {
@@ -740,19 +740,19 @@ int main(int argc, const char * argv[]) {
 
                 // the lion way to fullscreen gl http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html
                 NSRect displayRect = [screen frame];
-                window = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
-                [window setLevel:CGShieldingWindowLevel()];
-                [window setOpaque:YES];
+                BMWindow = [[NSWindow alloc] initWithContentRect:displayRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO];
+                [BMWindow setLevel:CGShieldingWindowLevel()];
+                [BMWindow setOpaque:YES];
 
                 NSRect viewRect = NSMakeRect(0.0, 0.0, displayRect.size.width, displayRect.size.height);
                 NSOpenGLView* view = [[NSOpenGLView alloc] initWithFrame:viewRect pixelFormat:format];
-                [window setContentView:view];
+                [BMWindow setContentView:view];
 
                 // associate once view is bound to a window
                 [view setOpenGLContext:context];
                 [context setView:view];
 
-                [window makeKeyAndOrderFront:nil];
+                [BMWindow makeKeyAndOrderFront:nil];
                 [NSApp activateIgnoringOtherApps:YES];
 
                 // hide the cursor when presenting
